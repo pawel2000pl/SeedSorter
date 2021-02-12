@@ -1,0 +1,151 @@
+object MainForm: TMainForm
+  Left = 252
+  Height = 534
+  Top = 126
+  Width = 844
+  Caption = 'Configure'
+  ClientHeight = 534
+  ClientWidth = 844
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  OnPaint = FormPaint
+  LCLVersion = '2.0.10.0'
+  object CameraSettingsGB: TGroupBox
+    Left = 0
+    Height = 536
+    Top = 0
+    Width = 177
+    Anchors = [akTop, akLeft, akBottom]
+    Caption = 'Camera settings'
+    ClientHeight = 512
+    ClientWidth = 175
+    ParentFont = False
+    TabOrder = 0
+    object DeviceSelector: TComboBox
+      Left = 8
+      Height = 34
+      Top = 16
+      Width = 152
+      ItemHeight = 0
+      ParentFont = False
+      TabOrder = 0
+      Text = 'DeviceSelector'
+    end
+    object RefreshDeviceListBtn: TButton
+      Left = 8
+      Height = 25
+      Top = 48
+      Width = 75
+      Caption = 'Refresh'
+      OnClick = RefreshDeviceListBtnClick
+      ParentFont = False
+      TabOrder = 1
+    end
+    object XResolutionSpinEdit: TSpinEdit
+      Left = 8
+      Height = 32
+      Top = 89
+      Width = 64
+      MaxValue = 1920
+      MinValue = 16
+      ParentFont = False
+      TabOrder = 2
+      Value = 1920
+    end
+    object YResolutionSpinEdit: TSpinEdit
+      Left = 96
+      Height = 32
+      Top = 89
+      Width = 64
+      MaxValue = 1080
+      MinValue = 16
+      ParentFont = False
+      TabOrder = 3
+      Value = 1080
+    end
+    object TakePhotoBtn: TButton
+      Left = 85
+      Height = 25
+      Top = 48
+      Width = 75
+      Caption = 'Take photo'
+      OnClick = TakePhotoBtnClick
+      ParentFont = False
+      TabOrder = 4
+    end
+    object ScrollBox2: TScrollBox
+      Left = 0
+      Height = 319
+      Top = 192
+      Width = 176
+      HorzScrollBar.Page = 1
+      VertScrollBar.Page = 1
+      Anchors = [akTop, akLeft, akBottom]
+      ParentFont = False
+      TabOrder = 5
+    end
+    object AddAreaBtn: TButton
+      Left = 8
+      Height = 25
+      Top = 160
+      Width = 75
+      Caption = 'Add area'
+      OnClick = AddAreaBtnClick
+      ParentFont = False
+      TabOrder = 6
+    end
+    object SaveAsBadBtn: TButton
+      Left = 8
+      Height = 25
+      Top = 128
+      Width = 75
+      Caption = 'Save bad'
+      OnClick = SaveAsBadBtnClick
+      TabOrder = 7
+    end
+  end
+  object ScrollBox1: TScrollBox
+    Left = 176
+    Height = 535
+    Top = 0
+    Width = 680
+    HorzScrollBar.Page = 105
+    VertScrollBar.Page = 104
+    Anchors = [akTop, akLeft, akRight, akBottom]
+    ClientHeight = 533
+    ClientWidth = 678
+    ParentFont = False
+    TabOrder = 1
+    object PaintBox1: TPaintBox
+      Left = 0
+      Height = 105
+      Top = -1
+      Width = 105
+      ParentFont = False
+      OnPaint = PaintBox1Paint
+    end
+  end
+  object SaveAsGoodBtn: TButton
+    Left = 94
+    Height = 25
+    Top = 152
+    Width = 75
+    Caption = 'Save good'
+    OnClick = SaveAsGoodBtnClick
+    TabOrder = 2
+  end
+  object SaveAsBtn: TButton
+    Left = 94
+    Height = 25
+    Top = 180
+    Width = 75
+    Caption = 'Save …'
+    OnClick = SaveAsBtnClick
+    TabOrder = 3
+  end
+  object Timer1: TTimer
+    OnTimer = Timer1Timer
+    Left = 296
+    Top = 10
+  end
+end

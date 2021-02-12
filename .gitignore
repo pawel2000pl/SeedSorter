@@ -1,0 +1,14 @@
+*.ppu
+*.o
+*.or
+*.compiled
+*.png
+*.mcmeta
+*.lps
+.directory
+*.txt
+*backup*
+*lib*
+Analyser/Sorter
+Learning/Learning
+Configurator/SeedSorterConfigurator
