@@ -18,6 +18,7 @@ var
     ConfigFile : TIniFile;
     Electromagnets : array of TElectromagnetConroller;
     Switches : array of Integer;
+    DelayTime : Word;
 
 function ReadString(var s : AnsiString) : Boolean;
 var
@@ -31,16 +32,33 @@ begin
 
     Result := not (chr in [#26, #3]);
 end;
+
+procedure CopyFile(const Source, Dest : AnsiString);
+var
+    SrcStream, DstStream : TFileStream;
+begin
+    SrcStream := TFileStream.Create(Source, fmOpenRead);
+    DstStream := TFileStream.Create(Dest, fmCreate);
+    SrcStream.Position := 0;
+    DstStream.CopyFrom(SrcStream, SrcStream.Size);
+    SrcStream.Free;
+    DstStream.Free;
+end;
     
 procedure OpenConfigFile;
 var
     ConfigFileName : AnsiString;
+    DefaultFileName : AnsiString;
 begin
 
-    if (ParamCount > 0) and (FileExists(ParamStr(1))) then
+    if (ParamCount > 0) then
         ConfigFileName := ParamStr(1)
     else
         ConfigFileName := GetUserDir + '.seedsorter/GpioConfig.ini';
+
+    DefaultFileName := ExtractFilePath(ParamStr(0)) + 'GpioDefaultConfig.ini';
+    if (not FileExists(ConfigFileName)) and FileExists(DefaultFileName) then
+        CopyFile(DefaultFileName, ConfigFileName);
     
     ConfigFile := TIniFile.Create(ConfigFileName);
 end;
@@ -52,6 +70,7 @@ begin
     c := Length(Electromagnets);
     SetLength(Electromagnets, c+1);
     Electromagnets[c] := TElectromagnetConroller.Create(Gpio);
+    Electromagnets[c].Delay := DelayTime;
 end;
 
 procedure LoadElectromagnets;
@@ -100,7 +119,7 @@ begin
         Readln(StrB);
     DiffIndex := GetStrFirstDifference(StrA, StrB)-1;
     Switches[DiffIndex] := Index;
-    ConfigFile.WriteInteger('Configuration', IntToStr(DiffIndex), Index);
+    ConfigFile.WriteInteger('Switch', 'Area'+IntToStr(DiffIndex), Index);
 end;
     
 procedure ConfigurePins;
@@ -116,7 +135,7 @@ var
     i : Integer;
 begin
     for i := 0 to Length(Electromagnets)-1 do
-       Switches[i] := ConfigFile.ReadInteger('Configuration', IntToStr(i), 0);    
+       Switches[i] := ConfigFile.ReadInteger('Switch', 'Area'+IntToStr(i), 0);    
 end;
 
 procedure ProcessString(const Str : AnsiString);
@@ -140,12 +159,14 @@ end;
 begin
     OpenConfigFile;
     LoadElectromagnets;
-    
+
+    DelayTime := 0;
     if not SameText(ConfigFile.ReadString('Configuration', 'NeedConfiguration', TrueStr), FalseStr) then
     begin
         ConfigurePins;
         ConfigFile.WriteString('Configuration', 'NeedConfiguration', FalseStr);
     end;    
+    DelayTime := ConfigFile.ReadInteger('Configuration', 'DelayTime', 0);
     LoadSwitches;
     
     ConfigFile.Free;

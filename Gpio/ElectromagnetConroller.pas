@@ -5,7 +5,7 @@ unit ElectromagnetConroller;
 interface
 
 uses
-    cThreads, SysUtils, Classes, GpioPinController;    
+    cThreads, SysUtils, Classes, GpioPinController, math;    
 
 type
     TElectromagnetConroller = class(TThread)
@@ -18,11 +18,12 @@ type
         FValue : Boolean;
         FTurnedTime : QWord;
         FTerminating : Boolean;
+        FDelay : Word;
         
         procedure SetValue(const AValue : Boolean);
     public
         property Value : Boolean read FValue write SetValue;
-
+        property Delay : Word read FDelay write FDelay;
 
         procedure Push(const Time : Integer = -1);
         procedure Execute; override;
@@ -38,13 +39,20 @@ var
 begin
     repeat
         Time := GetTickCount64 - FTurnedTime;
-        if FValue then
-        begin    
-            gpio.Value := Time mod DeltaTime < DeltaTime div 2;
-            if Time > MaxTurnedOnTime then
-                SetValue(False);
-        end;    
-        sleep(DeltaTime div 2 + 1);
+        if Time > Delay then
+        begin
+            Dec(Time, Delay);
+            if FValue then
+            begin    
+                if Time > MaxTurnedOnTime then
+                    SetValue(False)
+                else
+                    gpio.Value := Time mod DeltaTime < DeltaTime div 2;
+            end;    
+            sleep(DeltaTime div 2 + 1);
+        end
+        else
+            sleep(max(Time-Delay, 1));
     until FTerminating;    
 end;
 
@@ -70,6 +78,7 @@ end;
 constructor TElectromagnetConroller.Create(const Pin : LongWord);
 begin
     FValue := False;
+    FDelay := 0;
     gpio := TGpioPinController.Create(Pin);
     gpio.Open;
     gpio.Direction := gdOutput;

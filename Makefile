@@ -1,16 +1,16 @@
 all: Sorter Learning Configurator
 
 Sorter: 
-	fpc -B -Mobjfpc -dUseCThreads -Sh -Si "Analyser/Sorter.pas" "-FuCamera/" "-Fuutils/" "-oSorter"
+	fpc -B -Mobjfpc -dUseCThreads -vm6058 -Sh -Si "Analyser/Sorter.pas" "-FuCamera/" "-Fuutils/" "-oSorter"
 	
 Learning: 
-	fpc -B -Mobjfpc -Sh -Si "Learning/Learning.pas" "-Fuutils/" "-oLearning"
+	fpc -B -Mobjfpc -Sh -Si -vm6058 "Learning/Learning.pas" "-Fuutils/" "-oLearning"
 	
 Configurator:
 	lazbuild "Configurator/SeedSorterConfigurator.lpr"	
 	
 GpioController:
-	fpc -B -Mobjfpc -dUseCThreads -Sh -Si "Gpio/GpioController.pas" "-Fuutils/" "-oGpioController"
+	fpc -B -Mobjfpc -dUseCThreads -vm6058 -Sh -Si "Gpio/GpioController.pas" "-Fuutils/" "-oGpioController"
 	
 configure:
 	./Configurator/SeedSorterConfigurator
