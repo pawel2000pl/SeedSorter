@@ -9,9 +9,12 @@ Learning:
 Configurator:
 	lazbuild "Configurator/SeedSorterConfigurator.lpr"	
 	
+GpioController:
+	fpc -B -Mobjfpc -dUseCThreads -Sh -Si "Gpio/GpioController.pas" "-Fuutils/" "-oGpioController"
+	
 configure:
 	./Configurator/SeedSorterConfigurator
-	
+
 learn:
 	./Learning/Learning -t `ls ~/.seedsorter/true/*` -f `ls ~/.seedsorter/false/*`	
 
@@ -25,5 +28,6 @@ clean:
 	rm -f "Configurator/SeedSorterConfigurator"
 	rm -f "Analyser/Sorter"
 	rm -f "Learning/Learning"
+	rm -f "Gpio/GpioController"
 	
-.PHONY: Learning Sorter Configurator clean learn cofigure
+.PHONY: Learning Sorter Configurator clean learn cofigure GpioController
