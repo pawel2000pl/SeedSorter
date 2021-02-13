@@ -6,7 +6,8 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, Spin,
-  ExtCtrls, Math, Unix, SelectedRect, FPImage, YUV2Camera, IniFiles, SaveSampleUnit;
+  ExtCtrls, Arrow, Math, Unix, SelectedRect, FPImage, YUV2Camera, IniFiles,
+  SaveSampleUnit;
 
 var
   ConfigPath: ansistring = '~/.seedsorter/';
@@ -20,9 +21,12 @@ type
 
   TMainForm = class(TForm)
     AddAreaBtn: TButton;
-    SaveAsBadBtn: TButton;
+    Arrow1: TArrow;
+    Arrow2: TArrow;
+    Arrow3: TArrow;
+    Arrow4: TArrow;
+    Label1: TLabel;
     PaintBox1: TPaintBox;
-    SaveAsGoodBtn: TButton;
     SaveAsBtn: TButton;
     ScrollBox1: TScrollBox;
     ScrollBox2: TScrollBox;
@@ -34,6 +38,7 @@ type
     XResolutionSpinEdit: TSpinEdit;
     YResolutionSpinEdit: TSpinEdit;
     procedure AddAreaBtnClick(Sender: TObject);
+    procedure ArrowClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormPaint(Sender: TObject);
@@ -63,6 +68,7 @@ type
     procedure UpdateSelectionIndex;
     function TakePhoto(const Device: ansistring;
       const AWidth, AHeight: integer): boolean;
+    procedure MoveSelections(const MoveVector : TPoint);
     procedure RefreshDeviceList;
   end;
 
@@ -125,6 +131,18 @@ begin
   PaintBox1.Repaint;
 end;
 
+procedure TMainForm.ArrowClick(Sender: TObject);
+begin
+  if (Sender is TArrow) then
+    case (Sender as TArrow).ArrowType of
+      atDown: MoveSelections(Point(0, 1));
+      atUp: MoveSelections(Point(0, -1));
+      atRight: MoveSelections(Point(1, 0));
+      atLeft: MoveSelections(Point(-1, 0));
+    end;
+  PaintBox1.Repaint;
+end;
+
 procedure TMainForm.FormDestroy(Sender: TObject);
 var
   i: integer;
@@ -170,7 +188,7 @@ end;
 
 procedure TMainForm.SaveAsBadBtnClick(Sender: TObject);
 begin
-  SaveSelectionsAs(True);
+
 end;
 
 procedure TMainForm.SaveAsBtnClick(Sender: TObject);
@@ -180,7 +198,7 @@ end;
 
 procedure TMainForm.SaveAsGoodBtnClick(Sender: TObject);
 begin
-  SaveSelectionsAs(False);
+
 end;
 
 procedure TMainForm.TakePhotoBtnClick(Sender: TObject);
@@ -248,11 +266,11 @@ var
   bmp: TBitmap;
   w, h: integer;
 begin
-  w := Selection.SelectedRectangle.Right - Selection.SelectedRectangle.Left + 1;
-  h := Selection.SelectedRectangle.Bottom - Selection.SelectedRectangle.Top + 1;
+  w := Selection.SelectedRectangle.Right - Selection.SelectedRectangle.Left;
+  h := Selection.SelectedRectangle.Bottom - Selection.SelectedRectangle.Top;
   bmp := TBitmap.Create;
   bmp.SetSize(w, h);
-  bmp.Canvas.CopyRect(Rect(0, 0, w - 1, h - 1), SamplePhoto.Canvas,
+  bmp.Canvas.CopyRect(Rect(0, 0, w, h), SamplePhoto.Canvas,
     Selection.SelectedRectangle);
   bmp.SaveToFile(FileName);
   bmp.Free;
@@ -422,6 +440,14 @@ begin
   PaintBox1.SetBounds(0, 0, SamplePhoto.Width, SamplePhoto.Height);
   PaintBox1.Repaint;
   Result := True;
+end;
+
+procedure TMainForm.MoveSelections(const MoveVector: TPoint);
+var
+  i : Integer;
+begin
+  for i := 0 to Length(Selections)-1 do
+      Selections[i].SelectedRectangle := MoveRect(Selections[i].SelectedRectangle, MoveVector);
 end;
 
 procedure TMainForm.RefreshDeviceList;

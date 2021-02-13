@@ -145,9 +145,13 @@ var
     Border, Area, Difference, d : Extended;    
     i : Integer;
 begin
+    writeln('Learning 2/3');
+    writeln(ProgressLabel64);
     Difference := 0;
-    for i := 1 to 10000 do
+    for i := 1 to 10048 do
     begin    
+        if (i mod 157) = 0 then
+            Write('#');
         if Test((i mod 100)/100, (i div 100)/100) and (TestResult > Difference) then
         begin
             Border := (i mod 100)/100;
@@ -156,6 +160,8 @@ begin
         end;            
     end;
 
+    writeln;
+    writeln('Learning 3/3');
     writeln(ProgressLabel64);
     
     for i := 0 to 1600-1 do
@@ -192,9 +198,8 @@ begin
 end;
 
 begin    
-    Writeln('Learning 1/2');
+    Writeln('Learning 1/3');
     LoadSamples;
-    writeln('Learning 2/2');
     SearchBorders;
     FreeSamples;
     Writeln('Everything has beed saved');

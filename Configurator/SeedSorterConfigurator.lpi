@@ -64,6 +64,7 @@
         <Filename Value="savesampleunit.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="SaveSampleDialog"/>
+        <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="SaveSampleUnit"/>
       </Unit6>

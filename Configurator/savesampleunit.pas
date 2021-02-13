@@ -104,7 +104,7 @@ begin
   Form := TSaveSampleDialog.Create(Application);
   Form.Label1.Caption:=Message;
   Form.AssignVisibleButtons(Buttons);
-  Form.Image1.Canvas.CopyRect(Rect(0, 0, Form.Image1.Width-1, Form.Image1.Height-1), Image, SelectedRect);
+  Form.Image1.Canvas.CopyRect(Rect(0, 0, Form.Image1.Width, Form.Image1.Height), Image, SelectedRect);
   Form.Show;
 
   while Form.ExecuteResult = mrNone do
@@ -117,7 +117,7 @@ end;
 class function TSaveSampleDialog.Execute(const Message: AnsiString;
   const Buttons: TSaveSampleDialogButtons; const Image: TCanvas): TModalResult;
 begin
-     Result := Execute(Message, Buttons, Image, Rect(0, 0, Image.Width-1, Image.Height-1));
+     Result := Execute(Message, Buttons, Image, Image.ClipRect);
 end;
 
 end.

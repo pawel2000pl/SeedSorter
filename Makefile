@@ -22,5 +22,8 @@ clean:
 	bash -i "./scripts/clean.sh" "utils"
 	rm -rf "Configurator/lib"
 	rm -rf "Configurator/backup"
+	rm -f "Configurator/SeedSorterConfigurator"
+	rm -f "Analyser/Sorter"
+	rm -f "Learning/Learning"
 	
 .PHONY: Learning Sorter Configurator clean learn cofigure

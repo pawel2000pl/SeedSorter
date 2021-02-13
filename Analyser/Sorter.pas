@@ -5,18 +5,21 @@ program Sorter;
 uses
     cThreads, SysUtils, Analyser;
 
+const 
+    TerminateFile = '/dev/shm/TerminateSeedSorter';
+    
 var
     SeedAnalyser : TSeedAnalyser;
     i : Integer;
 begin
     SeedAnalyser := TSeedAnalyser.Create(GetUserDir+'.seedsorter/config.ini');
 
-
-    for i := 0 to 1000 do
-    begin
+    repeat
         writeln(SeedAnalyser.GetStatus);
-        sleep(10);
-    end;
+        sleep(5);
+    until FileExists(TerminateFile);
 
     SeedAnalyser.Free;
+
+    DeleteFile(TerminateFile);
 end.

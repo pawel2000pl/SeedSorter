@@ -1,7 +1,7 @@
 object MainForm: TMainForm
-  Left = 252
+  Left = 391
   Height = 534
-  Top = 126
+  Top = 175
   Width = 844
   Caption = 'Configure'
   ClientHeight = 534
@@ -25,7 +25,7 @@ object MainForm: TMainForm
       Left = 8
       Height = 34
       Top = 16
-      Width = 152
+      Width = 160
       ItemHeight = 0
       ParentFont = False
       TabOrder = 0
@@ -35,7 +35,7 @@ object MainForm: TMainForm
       Left = 8
       Height = 25
       Top = 48
-      Width = 75
+      Width = 64
       Caption = 'Refresh'
       OnClick = RefreshDeviceListBtnClick
       ParentFont = False
@@ -64,10 +64,10 @@ object MainForm: TMainForm
       Value = 1080
     end
     object TakePhotoBtn: TButton
-      Left = 85
+      Left = 72
       Height = 25
       Top = 48
-      Width = 75
+      Width = 96
       Caption = 'Take photo'
       OnClick = TakePhotoBtnClick
       ParentFont = False
@@ -75,8 +75,8 @@ object MainForm: TMainForm
     end
     object ScrollBox2: TScrollBox
       Left = 0
-      Height = 319
-      Top = 192
+      Height = 263
+      Top = 248
       Width = 176
       HorzScrollBar.Page = 1
       VertScrollBar.Page = 1
@@ -87,21 +87,68 @@ object MainForm: TMainForm
     object AddAreaBtn: TButton
       Left = 8
       Height = 25
-      Top = 160
+      Top = 216
       Width = 75
       Caption = 'Add area'
       OnClick = AddAreaBtnClick
       ParentFont = False
       TabOrder = 6
     end
-    object SaveAsBadBtn: TButton
-      Left = 8
+    object SaveAsBtn: TButton
+      Left = 88
       Height = 25
-      Top = 128
+      Top = 216
       Width = 75
-      Caption = 'Save bad'
-      OnClick = SaveAsBadBtnClick
+      Caption = 'Save …'
+      OnClick = SaveAsBtnClick
       TabOrder = 7
+    end
+    object Arrow1: TArrow
+      Left = 64
+      Height = 34
+      Top = 152
+      Width = 30
+      Constraints.MinHeight = 8
+      Constraints.MinWidth = 8
+      OnClick = ArrowClick
+    end
+    object Arrow2: TArrow
+      Left = 96
+      Height = 34
+      Top = 120
+      Width = 30
+      ArrowType = atUp
+      Constraints.MinHeight = 8
+      Constraints.MinWidth = 8
+      OnClick = ArrowClick
+    end
+    object Arrow3: TArrow
+      Left = 96
+      Height = 34
+      Top = 184
+      Width = 30
+      ArrowType = atDown
+      Constraints.MinHeight = 8
+      Constraints.MinWidth = 8
+      OnClick = ArrowClick
+    end
+    object Arrow4: TArrow
+      Left = 128
+      Height = 34
+      Top = 152
+      Width = 30
+      ArrowType = atRight
+      Constraints.MinHeight = 8
+      Constraints.MinWidth = 8
+      OnClick = ArrowClick
+    end
+    object Label1: TLabel
+      Left = 8
+      Height = 21
+      Top = 128
+      Width = 62
+      Caption = 'Move all'
+      ParentColor = False
     end
   end
   object ScrollBox1: TScrollBox
@@ -124,24 +171,6 @@ object MainForm: TMainForm
       ParentFont = False
       OnPaint = PaintBox1Paint
     end
-  end
-  object SaveAsGoodBtn: TButton
-    Left = 94
-    Height = 25
-    Top = 152
-    Width = 75
-    Caption = 'Save good'
-    OnClick = SaveAsGoodBtnClick
-    TabOrder = 2
-  end
-  object SaveAsBtn: TButton
-    Left = 94
-    Height = 25
-    Top = 180
-    Width = 75
-    Caption = 'Save …'
-    OnClick = SaveAsBtnClick
-    TabOrder = 3
   end
   object Timer1: TTimer
     OnTimer = Timer1Timer

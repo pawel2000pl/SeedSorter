@@ -214,7 +214,6 @@ begin
     end;
     Normalize(ColorTable);
     writeln;
-    Writeln('Done.');
 end;
 
 function Mark(Image : TUniversalImage; const ColorTable : TColorTable; const ChangeColor : Boolean = false; const BorderMin : Double = 0; const BorderMax : Double = 1) : Double; 
