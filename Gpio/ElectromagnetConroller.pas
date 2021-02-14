@@ -48,11 +48,9 @@ begin
                     SetValue(False)
                 else
                     gpio.Value := Time mod DeltaTime < DeltaTime div 2;
-            end;    
-            sleep(DeltaTime div 2 + 1);
-        end
-        else
-            sleep(max(Time-Delay, 1));
+            end; 
+        end;    
+        sleep(Max(1, Min(DeltaTime div 2, Time-Delay)));
     until FTerminating;    
 end;
 
@@ -71,7 +69,8 @@ begin
     if FValue = AValue then
         Exit;
     FValue := AValue;
-    gpio.Value := FValue;    
+    if Delay > 0 then
+        gpio.Value := FValue;    
     FTurnedTime := GetTickCount64;
 end;
 
