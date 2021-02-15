@@ -67,10 +67,12 @@ type
     FThreadCount : integer;
     Threads : array of TQueueThread;
 
+    fRemoveRepeated : Boolean;
     fSuspend : boolean;
   public
     property ThreadCount : Integer read FThreadCount;
     property CoreCount : Integer read FCoreCount;
+    property RemoveRepeated : Boolean read fRemoveRepeated write fRemoveRepeated;
     function QueueSize : Integer;
 
     procedure Clear; virtual;
@@ -82,9 +84,9 @@ type
     destructor Destroy; override;
   end;
 
-  { TQueueManager2 }
+  { TQueueManagerWithDelays }
 
-  TQueueManager2 = class(TQueueManager)
+  TQueueManagerWithDelays = class(TQueueManager)
   private
     fDelayList : array of TQueueDelayRecord;
     fDelayListCount : integer;
@@ -108,9 +110,9 @@ begin
   Result := (a.Properties.Code = b.Properties.Code) and (a.Properties.Data = b.Properties.Data);
 end;
 
-{ TQueueManager2 }
+{ TQueueManagerWithDelays }
 
-procedure TQueueManager2.ExecuteDelayMethods;
+procedure TQueueManagerWithDelays.ExecuteDelayMethods;
 var
   i : integer;
   CurrTime : QWord;
@@ -135,7 +137,7 @@ begin
   end;
 end;
 
-procedure TQueueManager2.Clear;
+procedure TQueueManagerWithDelays.Clear;
 begin
   DelayLocker.Lock;
   try
@@ -147,7 +149,7 @@ begin
   inherited Clear;
 end;
 
-procedure TQueueManager2.AddMethodDelay(const Method: TQueueMethod;
+procedure TQueueManagerWithDelays.AddMethodDelay(const Method: TQueueMethod;
   const DelayMilliseconds: QWord);
 begin
   DelayLocker.Lock;
@@ -160,7 +162,7 @@ begin
   end;
 end;
 
-constructor TQueueManager2.Create(const ThreadsPerCore: Integer;
+constructor TQueueManagerWithDelays.Create(const ThreadsPerCore: Integer;
   const AdditionalThreads: integer);
 begin                    
   DelayLocker := TLocker.Create;
@@ -170,7 +172,7 @@ begin
   AddMethod(@ExecuteDelayMethods);
 end;
 
-destructor TQueueManager2.Destroy;
+destructor TQueueManagerWithDelays.Destroy;
 begin
   Clear;
   DelayLocker.Free;
@@ -207,16 +209,19 @@ begin
   Locker.Lock;
   try
     repeat
-      q := fList[PostInc(fExecuteIndex)];
-      if fExecuteIndex = fAddIndex then
+    q := fList[PostInc(fExecuteIndex)];
+    if fExecuteIndex = fAddIndex then
         Exit(False);
     until (q.Method <> nil);
 
-    i := fExecuteIndex - 1;
-    repeat
-      if q = fList[i] then
-        fList[i].Method := nil;
-    until PostInc(i) = fAddIndex;
+    if fRemoveRepeated then
+    begin
+        i := fExecuteIndex - 1;
+        repeat
+        if q = fList[i] then
+            fList[i].Method := nil;
+        until PostInc(i) = fAddIndex;
+    end;
   finally
     Locker.Unlock;
   end;
@@ -264,6 +269,7 @@ var
   i : integer;
 begin
   Suspend := False;
+  fRemoveRepeated := True;
   fAddIndex := 0;
   fExecuteIndex := 0;
   Locker := TLocker.Create;

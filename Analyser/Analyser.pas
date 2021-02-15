@@ -153,6 +153,7 @@ var
     SectionName : AnsiString;
 begin
     FQueue := TQueueManager.Create(1,1);
+    FQueue.RemoveRepeated := False;
     AreaLocker := TLocker.Create;
     FWidth := ConfigFile.ReadInteger('Global', 'Width', 1920);
     FHeight := ConfigFile.ReadInteger('Global', 'Height', 1080);

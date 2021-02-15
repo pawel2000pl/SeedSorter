@@ -10,7 +10,6 @@ const
     
 var
     SeedAnalyser : TSeedAnalyser;
-    i : Integer;
 begin
     SeedAnalyser := TSeedAnalyser.Create(GetUserDir+'.seedsorter/config.ini');
 

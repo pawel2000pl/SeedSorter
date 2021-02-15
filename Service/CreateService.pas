@@ -17,11 +17,10 @@ begin
     writeln('Restart=always');
     writeln('RestartSec=1');
     writeln('User=', GetEnvironmentVariable('USER'));
-    writeln('ExecStart=', ParamStr(0), '/'); //todo
+    writeln('ExecStart=', GetUserDir, '.seedsorter/Service.sh'); 
     writeln;
     
     writeln('[Install]');
     writeln('WantedBy=multi-user.target');
-
     
 end.

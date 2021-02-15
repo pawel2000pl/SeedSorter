@@ -323,7 +323,7 @@ constructor TSimpleV4l1Device.Create(ADevice: String; APalette: Word);
 begin
   FDevice := ADevice;
   FPalette := APalette;
-  SetResolution(-1, -1);
+  SetResolution(0, 0);
 end;
 
 procedure TSimpleV4l1Device.SetResolution(const Width, Height : Integer);
@@ -363,9 +363,9 @@ begin
   with FVideo_Window do begin
     x := 0;
     y := 0;
-    if width < 0 then
+    if width = 0 then
       width := FVideo_Capability.maxwidth;
-    if height < 0 then
+    if height = 0 then
       height := FVideo_Capability.maxheight;
     chromakey := 0;
     flags := 0;

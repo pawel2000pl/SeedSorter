@@ -1,6 +1,7 @@
 # Seed sorter
 Program for sorting bean seeds
-Warning: This software is for embedded use only!
+
+Warning: This software is for embedded system (Raspberry Pi 4) use only!
 
 How to run first time:
 
