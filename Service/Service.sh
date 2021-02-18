@@ -28,11 +28,39 @@ echo in > "$STOP_BUTTON_PATH/direction"
 
 sleep 1s
 
-#TODO: main loop
+while [ true ];
+do
+        
+    if [ `cat "START_BUTTON_PATH/value"` == 1 ];
+    then
+        $MY_PATH/Sorter | $MY_PATH/GpioController &
+        
+        while [ `cat "STOP_BUTTON_PATH/value"` == 0 ];
+        do
+            sleep 0.1s
+        done
+        touch '/dev/shm/TerminateSeedSorter'
+        sleep 1s
+    fi
+    
+    if [ `cat "STOP_BUTTON_PATH/value"` == 1 ];
+    then
+        sleep 5s            
+        if [ `cat "STOP_BUTTON_PATH/value"` == 1 ];
+        then
+            touch '/dev/shm/TerminateSeedSorter'
+            sleep 5s
+            break
+        fi
+    fi
+    sleep 0.1s
+done
 
 #terminating
 
 echo $START_BUTTON > /sys/class/gpio/unexport
 echo $STOP_BUTTON > /sys/class/gpio/unexport
+
+sudo shutdown 0
 
 while ( true );  do sleep 1s; done

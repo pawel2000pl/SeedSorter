@@ -175,7 +175,7 @@ begin
         FAreas[i].Top := ConfigFile.ReadFloat(SectionName, 'Top', 0);
         FAreas[i].Bottom := ConfigFile.ReadFloat(SectionName, 'Bottom', 0);
     end;
-    for i := 0 to FQueue.CoreCount-1 do
+    for i := 0 to max(1, FQueue.CoreCount-2) do
         FQueue.AddMethod(@Analicys);
 end;
 

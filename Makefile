@@ -15,6 +15,7 @@ GpioController:
 Service: 	
 	bash -c 'mkdir -p ~/.seedsorter'
 	bash -c 'cp Analyser/Sorter ~/.seedsorter/Sorter'
+	bash -c 'cp Gpio/GpioController ~/.seedsorter/GpioController'
 	chmod u+x "Service/Service.sh"
 	bash -c 'cp "Service/Service.sh" ~/.seedsorter/'
 	instantfpc -B -Mobjfpc -Sh -Si "Service/CreateService.pas" "-oCreateService" > "/etc/systemd/system/seedsorter.service"

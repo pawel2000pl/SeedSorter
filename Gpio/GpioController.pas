@@ -146,6 +146,30 @@ begin
         Electromagnets[Switches[i]].Value := Str[i+1] = '1';
 end;
 
+procedure Hello(const Delay : LongWord = 100);
+var
+    Str : AnsiString;
+    i, c : Integer;
+begin
+    c := Length(Electromagnets);
+    Str := StringOfChar('0', c);
+    for i := 1 to c do
+    begin
+        Str[i] := '1';
+        ProcessString(Str);
+        sleep(Delay);
+        Str[i] := '0';
+    end;    
+    for i := c downto 1 do
+    begin
+        Str[i] := '1';
+        ProcessString(Str);
+        sleep(Delay);
+        Str[i] := '0';
+    end;
+    ProcessString(Str);
+end;
+
 function ProcessInput : Boolean;
 var
     Str : AnsiString;
@@ -171,8 +195,12 @@ begin
     
     ConfigFile.Free;
 
+    Hello(100);
+    
     while ProcessInput do;
 
+    Hello(50);
+    
     FreeElectromagnets;
 end.
 
