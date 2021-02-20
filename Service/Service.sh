@@ -7,11 +7,14 @@ if [ -z "$MY_PATH" ] ; then
 fi
 echo "$MY_PATH"
 
-MY_PATH="/home/pi/.seedsorter"
+#MY_PATH="/home/pi/.seedsorter"
 
-sudo ip address add 192.168.2.1/24 dev `ip address show | grep -P -o "e[tn][hp][0-9]" | head -n 1`
+ sudo ip address add 192.168.2.1/24 dev `ip address show | grep -P -o "e[tn][hp][0-9]" | head -n 1`
 
 CONFIGURATION_PATH="$MY_PATH/GpioConfig.ini"
+
+#CONFIGURATION_PATH="./GpioConfig.ini"
+
 START_BUTTON=`cat "$CONFIGURATION_PATH" | grep StartButton | cut -f 1 -d "=" | head -n 1`
 STOP_BUTTON=`cat "$CONFIGURATION_PATH" | grep StopButton | cut -f 1 -d "=" | head -n 1`
 
@@ -28,26 +31,32 @@ echo in > "$STOP_BUTTON_PATH/direction"
 
 sleep 1s
 
+#echo Working…
+
 while [ true ];
 do
         
-    if [ `cat "START_BUTTON_PATH/value"` == 1 ];
+    if [ `cat "$START_BUTTON_PATH/value"` == 1 ];
     then
         $MY_PATH/Sorter | $MY_PATH/GpioController &
+        #echo Started
         
-        while [ `cat "STOP_BUTTON_PATH/value"` == 0 ];
+        while [ `cat "$STOP_BUTTON_PATH/value"` == 0 ];
         do
             sleep 0.1s
         done
+        
+        #echo Terminated
         touch '/dev/shm/TerminateSeedSorter'
         sleep 1s
     fi
     
-    if [ `cat "STOP_BUTTON_PATH/value"` == 1 ];
+    if [ `cat "$STOP_BUTTON_PATH/value"` == 1 ];
     then
-        sleep 5s            
-        if [ `cat "STOP_BUTTON_PATH/value"` == 1 ];
+        sleep 3s            
+        if [ `cat "$STOP_BUTTON_PATH/value"` == 1 ];
         then
+            #echo Shutdowning…
             touch '/dev/shm/TerminateSeedSorter'
             sleep 5s
             break
@@ -62,5 +71,6 @@ echo $START_BUTTON > /sys/class/gpio/unexport
 echo $STOP_BUTTON > /sys/class/gpio/unexport
 
 sudo shutdown 0
+#echo Shutdown
 
 while ( true );  do sleep 1s; done
