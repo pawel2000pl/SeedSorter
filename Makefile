@@ -16,10 +16,11 @@ Service:
 	bash -c 'mkdir -p ~/.seedsorter'
 	bash -c 'cp Analyser/Sorter ~/.seedsorter/Sorter'
 	bash -c 'cp Gpio/GpioController ~/.seedsorter/GpioController'
-	bash -c 'cp Gpio/GpioDefaultConfig.ini ~/.seedsorter/GpioDefaultConfig.ini'
+	bash -c 'cp Gpio/GpioDefaultConfig.ini ~/.seedsorter/GpioConfig.ini'
 	chmod u+x "Service/Service.sh"
 	bash -c 'cp "Service/Service.sh" ~/.seedsorter/'
-	instantfpc -B -Mobjfpc -Sh -Si "Service/CreateService.pas" "-oCreateService" > "/etc/systemd/system/seedsorter.service"
+	instantfpc -B -Mobjfpc -Sh -Si "Service/CreateService.pas" "-oCreateService" > "/dev/shm/seedsorter.service"
+	sudo mv "/dev/shm/seedsorter.service" "/etc/systemd/system/seedsorter.service"
 	
 RemoveService: 
 	rm "/etc/systemd/system/seedsorter.service"
