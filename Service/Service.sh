@@ -1,52 +1,48 @@
 #!/bin/bash
 
-MY_PATH="`dirname \"$0\"`"              
-MY_PATH="`( cd \"$MY_PATH\" && pwd )`" 
-if [ -z "$MY_PATH" ] ; then
-  MY_PATH="/home/pi/.seedsorter"
-fi
-echo "$MY_PATH"
+MY_PATH="/home/"`whoami`"/.seedsorter"
+cd $MY_PATH
 
-#MY_PATH="/home/pi/.seedsorter"
-
- sudo ip address add 192.168.2.1/24 dev `ip address show | grep -P -o "e[tn][hp][0-9]" | head -n 1`
+sudo ip address add 192.168.2.1/24 dev `ip address show | grep -P -o "e[tn][hp][0-9]" | head -n 1`
 
 CONFIGURATION_PATH="$MY_PATH/GpioConfig.ini"
 
-#CONFIGURATION_PATH="./GpioConfig.ini"
-
 START_BUTTON=`cat "$CONFIGURATION_PATH" | grep StartButton | cut -f 1 -d "=" | head -n 1`
 STOP_BUTTON=`cat "$CONFIGURATION_PATH" | grep StopButton | cut -f 1 -d "=" | head -n 1`
+STATUS_LED=`cat "$CONFIGURATION_PATH" | grep StatusLED | cut -f 1 -d "=" | head -n 1`
 
 echo $START_BUTTON > /sys/class/gpio/export
 echo $STOP_BUTTON > /sys/class/gpio/export
+echo $STATUS_LED > /sys/class/gpio/export
 
 START_BUTTON_PATH="/sys/class/gpio/gpio$START_BUTTON"
 STOP_BUTTON_PATH="/sys/class/gpio/gpio$STOP_BUTTON"
+STATUS_LED_PATH="/sys/class/gpio/gpio$STATUS_LED"
 
 sleep 1s
 
 echo in > "$START_BUTTON_PATH/direction"
 echo in > "$STOP_BUTTON_PATH/direction"
+echo out > "$STATUS_LED_PATH/direction"
 
 sleep 1s
 
-#echo Working…
-
 while [ true ];
 do
+    echo 1 > "$STATUS_LED_PATH/value"    
         
     if [ `cat "$START_BUTTON_PATH/value"` == 1 ];
     then
         $MY_PATH/Sorter | $MY_PATH/GpioController &
-        #echo Started
         
         while [ `cat "$STOP_BUTTON_PATH/value"` == 0 ];
         do
-            sleep 0.1s
+            echo 1 > "$STATUS_LED_PATH/value"    
+            sleep 0.05s
+            echo 0 > "$STATUS_LED_PATH/value"    
+            sleep 0.05s
         done
         
-        #echo Terminated
         touch '/dev/shm/TerminateSeedSorter'
         sleep 1s
     fi
@@ -56,7 +52,6 @@ do
         sleep 3s            
         if [ `cat "$STOP_BUTTON_PATH/value"` == 1 ];
         then
-            #echo Shutdowning…
             touch '/dev/shm/TerminateSeedSorter'
             sleep 5s
             break
@@ -70,7 +65,17 @@ done
 echo $START_BUTTON > /sys/class/gpio/unexport
 echo $STOP_BUTTON > /sys/class/gpio/unexport
 
-sudo shutdown 0
-#echo Shutdown
+for ((i=0;i<15;i++)); 
+do
+    echo 0 > "$STATUS_LED_PATH/value"    
+    sleep 0.05s
+    echo 1 > "$STATUS_LED_PATH/value"    
+    sleep 0.05s
+done    
 
-while ( true );  do sleep 1s; done
+sudo shutdown 0
+
+while ( true ); do sleep 1s; done
+
+#never do this
+echo $STATUS_LED > /sys/class/gpio/unexport
