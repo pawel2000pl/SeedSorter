@@ -1,0 +1,12 @@
+Step 1
+  Turn on the light, leave the vibator off. Put seed on area where it is being analysed. 
+
+  First put seed which will not be rejected. Then take a photo and set areas in the program.
+  After that click "Save ..." and "Not for all". 
+
+  Next put seed which will be rejected. Then take a new photo 
+  and then click "Save ..." and "Yes for all"
+
+
+  
+

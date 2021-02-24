@@ -45,4 +45,8 @@ clean:
 	rm -f "Learning/Learning"
 	rm -f "Gpio/GpioController"
 	
-.PHONY: Learning Sorter Configurator clean learn cofigure GpioController Service RemoveService
+walkthrough:
+	chmod u+x "scripts/walkthrough.sh"
+	bash -i "./scripts/walkthrough.sh"
+	
+.PHONY: Learning Sorter Configurator clean learn cofigure GpioController Service RemoveService walkthrough
