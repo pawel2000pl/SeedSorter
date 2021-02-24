@@ -2,6 +2,7 @@
 Program for sorting bean seeds
 
 Warning: This software is for embedded system (Raspberry Pi 4) use only!
+Need packets: libv4l-dev fpc lazarus
 
 How to run first time:
 

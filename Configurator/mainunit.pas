@@ -44,9 +44,7 @@ type
     procedure FormPaint(Sender: TObject);
     procedure PaintBox1Paint(Sender: TObject);
     procedure RefreshDeviceListBtnClick(Sender: TObject);
-    procedure SaveAsBadBtnClick(Sender: TObject);
     procedure SaveAsBtnClick(Sender: TObject);
-    procedure SaveAsGoodBtnClick(Sender: TObject);
     procedure TakePhotoBtnClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
   private
@@ -105,6 +103,7 @@ end;
 
 procedure TMainForm.FormCreate(Sender: TObject);
 begin
+  Randomize;
   RefreshDeviceList;
   SamplePhoto := TBitmap.Create;
   ToBeFreed := TStringList.Create;
@@ -186,19 +185,9 @@ begin
   RefreshDeviceList;
 end;
 
-procedure TMainForm.SaveAsBadBtnClick(Sender: TObject);
-begin
-
-end;
-
 procedure TMainForm.SaveAsBtnClick(Sender: TObject);
 begin
   SaveSelectionsAs;
-end;
-
-procedure TMainForm.SaveAsGoodBtnClick(Sender: TObject);
-begin
-
 end;
 
 procedure TMainForm.TakePhotoBtnClick(Sender: TObject);
@@ -294,7 +283,7 @@ procedure TMainForm.SaveSelectionAs(const Index: integer; const Verdict: boolean
 begin
   if (Index >= 0) and (Index < Length(Selections)) then
     SaveSelectionToFile(Selections[Index], IfThen(Verdict, ConfigTruePath,
-      ConfigFalsePath) + IntToStr(GetTickCount64) + '.bmp');
+      ConfigFalsePath) + IntToStr(GetTickCount64) + IntToStr(Random($FFFFFFFF)) + '.bmp');
 end;
 
 procedure TMainForm.SaveSelectionsAs(const Verdict: boolean; const FirstIndex: integer);
