@@ -98,7 +98,7 @@ var
         for i := 0 to Length(Samples)-1 do
         begin            
             m := Mark(Samples[i].Image, ColorTable, False, Border);
-            TestResult += ifthen(Samples[i].Verdict, 1, -30) * m;
+            TestResult += ifthen(Samples[i].Verdict, 1, -10)*m;
             if (m>Area) xor Samples[i].Verdict then
                 Result := False;
         end;
@@ -121,7 +121,7 @@ var
 
     function GetDifference(const i : Integer) : Extended;
     begin
-        Result := 0.1 * exp(-i/3);
+        Result := 0.005 * exp(-i/100);
     end;
 
 procedure SaveToIni(const Border, Area : Double; FileName : AnsiString = '~/.seedsorter/config.ini');
@@ -172,29 +172,53 @@ begin
         d := GetDifference(i);
         if Test(Border+d, Area) and (TestResult > Difference) then
         begin
-            Border += d;
+            Border := EnsureRange(Border+d, 0, 1);
             Difference := TestResult;
         end else if Test(Border-d, Area) and (TestResult > Difference) then
         begin
-            Border -= d;
+            Border := EnsureRange(Border-d, 0, 1);
             Difference := TestResult;
         end;
         
+        if Test(Border+d, Area+d) and (TestResult > Difference) then
+        begin
+            Area := EnsureRange(Area+d, 0, 1);
+            Border := EnsureRange(Border+d, 0, 1);
+            Difference := TestResult;
+        end else if Test(Border-d, Area+d) and (TestResult > Difference) then
+        begin
+            Area := EnsureRange(Area+d, 0, 1);
+            Border := EnsureRange(Border-d, 0, 1);
+            Difference := TestResult;
+        end;
+        
+        if Test(Border+d, Area-d) and (TestResult > Difference) then
+        begin
+            Area := EnsureRange(Area-d, 0, 1);
+            Border := EnsureRange(Border+d, 0, 1);
+            Difference := TestResult;
+        end else if Test(Border-d, Area-d) and (TestResult > Difference) then
+        begin
+            Area := EnsureRange(Area-d, 0, 1);
+            Border := EnsureRange(Border-d, 0, 1);
+            Difference := TestResult;
+        end;
+        {
         if Test(Border, Area+d) and (TestResult > Difference) then
         begin
-            Area += d;
+            Area := EnsureRange(Area+d, 0, 1);
             Difference := TestResult;
         end else if Test(Border, Area-d) and (TestResult > Difference) then
         begin
-            Area -= d;
+            Area := EnsureRange(Area-d, 0, 1);
             Difference := TestResult;
-        end;      
+        end; }     
     end;
 
     writeln;
     Writeln('Done.');
     MarkTest(Border, Area);
-    SaveToIni(Border, Area);
+    SaveToIni(1.1*Border, 1.3*Area);
 end;
 
 begin    

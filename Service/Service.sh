@@ -54,6 +54,7 @@ do
         then
             touch '/dev/shm/TerminateSeedSorter'
             sleep 5s
+            killall -9 Sorter && killall -9 GpioController
             break
         fi
     fi

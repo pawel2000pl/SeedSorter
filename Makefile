@@ -1,16 +1,16 @@
 all: Sorter Learning Configurator GpioController
 
 Sorter: 
-	fpc -B -Mobjfpc -dUseCThreads -Sh -Si "Analyser/Sorter.pas" "-FuCamera/" "-Fuutils/" "-oSorter"
+	fpc -B -O3 -Mobjfpc -dUseCThreads -Sh -Si "Analyser/Sorter.pas" "-FuCamera/" "-Fuutils/" "-oSorter"
 	
 Learning: 
-	fpc -B -Mobjfpc -Sh -Si "Learning/Learning.pas" "-Fuutils/" "-oLearning"
+	fpc -B -O3 -Mobjfpc -Sh -Si "Learning/Learning.pas" "-Fuutils/" "-oLearning"
 	
 Configurator:
 	lazbuild "Configurator/SeedSorterConfigurator.lpr"	
 	
 GpioController:
-	fpc -B -Mobjfpc -dUseCThreads -Sh -Si "Gpio/GpioController.pas" "-Fuutils/" "-oGpioController"
+	fpc -B -O3 -Mobjfpc -dUseCThreads -Sh -Si "Gpio/GpioController.pas" "-Fuutils/" "-oGpioController"
 	
 Service: 		
 	chmod u+x "Service/Service.sh"
@@ -49,4 +49,4 @@ walkthrough:
 	chmod u+x "scripts/walkthrough.sh"
 	bash -i "./scripts/walkthrough.sh"
 	
-.PHONY: Learning Sorter Configurator clean learn cofigure GpioController Service RemoveService walkthrough
+.PHONY: Learning Sorter Configurator clean learn configure GpioController Service RemoveService walkthrough

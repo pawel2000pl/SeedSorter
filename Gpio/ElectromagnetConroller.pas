@@ -10,15 +10,15 @@ uses
 type
     TElectromagnetConroller = class(TThread)
     const 
-        Freq = 60;  
+        Freq = 17;  
         DeltaTime = 1000 div Freq;
-        MaxTurnedOnTime = 1000;
     private
         gpio : TGpioPinController;
         FValue : Boolean;
         FTurnedTime : QWord;
         FTerminating : Boolean;
         FDelay : Word;
+        FState : Boolean;
         
         procedure SetValue(const AValue : Boolean);
     public
@@ -36,6 +36,7 @@ implementation
 procedure TElectromagnetConroller.Execute;
 var
     Time : QWord;
+    NewState : Boolean;
 begin
     repeat
         Time := GetTickCount64 - FTurnedTime;
@@ -43,11 +44,13 @@ begin
         begin
             Dec(Time, Delay);
             if FValue then
-            begin    
-                if Time > MaxTurnedOnTime then
-                    SetValue(False)
-                else
-                    gpio.Value := Time mod DeltaTime < DeltaTime div 2;
+            begin                
+                NewState := Time mod DeltaTime <= DeltaTime div 2;
+                if NewState <> FState then
+                begin
+                    FState := NewState;
+                    gpio.Value := FState;
+                end;
             end; 
         end;    
         sleep(Max(1, Min(DeltaTime div 2, Time-Delay)));
@@ -57,7 +60,7 @@ end;
 procedure TElectromagnetConroller.Push(const Time : Integer = -1);
 begin
     Value := True;
-    if (Time > 0) and (Time < MaxTurnedOnTime) then
+    if (Time > 0) then
     begin
         sleep(Time);
         Value := False;
@@ -69,9 +72,13 @@ begin
     if FValue = AValue then
         Exit;
     FValue := AValue;
-    if Delay > 0 then
-        gpio.Value := FValue;    
     FTurnedTime := GetTickCount64;
+    if (not FValue) or (Delay = 0) then 
+    begin
+        gpio.Value := FValue;
+        FState := FValue;
+        Exit;
+    end;
 end;
 
 constructor TElectromagnetConroller.Create(const Pin : LongWord);
@@ -82,6 +89,7 @@ begin
     gpio.Open;
     gpio.Direction := gdOutput;
     gpio.Value := False;
+    FState := False;
     inherited Create(False);
 end;
 

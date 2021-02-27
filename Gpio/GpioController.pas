@@ -33,6 +33,37 @@ begin
     Result := not (chr in [#26, #3]);
 end;
 
+function ReadSameString(var s : AnsiString; const Count : Integer = 20) : Boolean;
+var
+    i : Integer;
+    ls : AnsiString;
+begin
+    i := 0;
+    ls := 'null';
+    repeat
+        if not ReadString(s) then
+            Exit(False);
+        if ls = s then
+            inc(i)
+            else
+            begin
+                i := 1;
+                ls := s;
+            end;
+    until i >= Count;
+    Exit(True);
+end;
+
+procedure DumpString(const Count : Integer = 5);
+var
+    s : AnsiString;
+    i : Integer;
+begin
+    for i := 0 to Count -1 do
+        if not ReadString(s) then
+            exit;
+end;    
+    
 procedure CopyFile(const Source, Dest : AnsiString);
 var
     SrcStream, DstStream : TFileStream;
@@ -50,7 +81,6 @@ var
     ConfigFileName : AnsiString;
     DefaultFileName : AnsiString;
 begin
-
     if (ParamCount > 0) then
         ConfigFileName := ParamStr(1)
     else
@@ -69,6 +99,7 @@ var
 begin
     c := Length(Electromagnets);
     SetLength(Electromagnets, c+1);
+    writeln(stdErr, 'Working with Gpio ', Gpio, ' as electromagnet n.o. ', c);
     Electromagnets[c] := TElectromagnetConroller.Create(Gpio);
     Electromagnets[c].Delay := DelayTime;
 end;
@@ -111,23 +142,37 @@ var
     StrA, StrB : AnsiString;
     DiffIndex : Integer;
 begin
-    Readln(StrA);
-    Electromagnets[Index].Value := True;
-    Electromagnets[Index].Push(100);
+    Writeln(StdErr, 'Configuring: ', Index);
+    ReadSameString(StrA);
     StrB := StrA;
     while StrB = StrA do
-        Readln(StrB);
+    begin
+        Electromagnets[Index].Value := True;
+        ReadSameString(StrB);    
+    end;
+    Electromagnets[Index].Value := False;    
     DiffIndex := GetStrFirstDifference(StrA, StrB)-1;
     Switches[DiffIndex] := Index;
     ConfigFile.WriteInteger('Switch', 'Area'+IntToStr(DiffIndex), Index);
+    Writeln(StdErr, 'Connected: ', DiffIndex, ' with ', Index);
 end;
     
 procedure ConfigurePins;
 var
     i : Integer;
+    Str : AnsiString;
 begin
+    while ReadSameString(Str) do
+        if pos('0', Str) <= 0 then
+            Break
+            else
+            Writeln(StdErr, 'Error: not every area is detected');
     for i := 0 to Length(Electromagnets)-1 do
+    begin
         ConfigurePin(i);
+        sleep(500);
+        DumpString(200);
+    end;
 end;
 
 procedure LoadSwitches;
@@ -135,7 +180,10 @@ var
     i : Integer;
 begin
     for i := 0 to Length(Electromagnets)-1 do
-       Switches[i] := ConfigFile.ReadInteger('Switch', 'Area'+IntToStr(i), 0);    
+    begin
+        Switches[i] := ConfigFile.ReadInteger('Switch', 'Area'+IntToStr(i), 0);    
+        writeln(stdErr, 'Readed area n.o. ', i, ' as electromagnet n.o. ', Switches[i]);
+    end;
 end;
 
 procedure ProcessString(const Str : AnsiString);
@@ -178,29 +226,38 @@ begin
     if not Result then 
         Exit;
     ProcessString(Str);
-end;
+end;        
 
 begin
-    OpenConfigFile;
-    LoadElectromagnets;
+    try
+        Writeln(StdErr, 'Started GpioController');
+        OpenConfigFile;
+        LoadElectromagnets;
+      
+        DumpString(1200);
+        Writeln(StdErr, 'Reading strings');
+            
+        DelayTime := 0;
+        if not SameText(ConfigFile.ReadString('Configuration', 'NeedConfiguration', TrueStr), FalseStr) then
+        begin
+            Writeln(StdErr, 'Configuring');
+            ConfigurePins;
+            ConfigFile.WriteString('Configuration', 'NeedConfiguration', FalseStr);
+        end;    
+        DelayTime := ConfigFile.ReadInteger('Configuration', 'DelayTime', 0);
+        LoadSwitches;
+        
+        ConfigFile.Free;
 
-    DelayTime := 0;
-    if not SameText(ConfigFile.ReadString('Configuration', 'NeedConfiguration', TrueStr), FalseStr) then
-    begin
-        ConfigurePins;
-        ConfigFile.WriteString('Configuration', 'NeedConfiguration', FalseStr);
-    end;    
-    DelayTime := ConfigFile.ReadInteger('Configuration', 'DelayTime', 0);
-    LoadSwitches;
-    
-    ConfigFile.Free;
+        Writeln(StdErr, 'Working');
+        Hello(100);
+        
+        while ProcessInput do;
 
-    Hello(100);
-    
-    while ProcessInput do;
-
-    Hello(50);
-    
-    FreeElectromagnets;
+        Hello(50);
+        Writeln(StdErr, 'Done');
+    finally
+        FreeElectromagnets;
+    end;
 end.
 

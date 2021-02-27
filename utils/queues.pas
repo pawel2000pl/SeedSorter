@@ -24,7 +24,7 @@ unit Queues;
 interface
 
 uses
-  Classes, SysUtils, ProcessUtils, Locker, Math, Incrementations;
+  Classes, SysUtils, ProcessUtils, Locker, RTLEvent, Math, Incrementations;
 
 type
 
@@ -50,6 +50,7 @@ type
   private
     fTerminating: boolean;
     fManager: TQueueManager;
+    procedure WaitForNext;
   public
     procedure Execute; override;
     constructor Create(Manager: TQueueManager);
@@ -64,6 +65,8 @@ type
     fAddIndex, fExecuteIndex: word;
     Locker: TLocker;
     FCoreCount: integer;
+    FMethodCount : Integer;
+    FEvent : TRTLEvent;
 
     FThreadCount: integer;
     Threads: array of TQueueThread;
@@ -74,6 +77,7 @@ type
     property ThreadCount: integer read FThreadCount;
     property CoreCount: integer read FCoreCount;
     property RemoveRepeated: boolean read fRemoveRepeated write fRemoveRepeated;
+    property QueuedMethodCount : Integer read FMethodCount;
     function QueueSize: integer;
 
     procedure Clear; virtual;
@@ -81,8 +85,8 @@ type
     function ExecuteMethod: boolean;
     procedure DequeueObject(obj: TObject); virtual;
     procedure AddMethod(const Method: TQueueMethod); virtual;
-    constructor Create(const ThreadsPerCore: integer = 1;
-      const AdditionalThreads: integer = 0);
+    procedure AddOrExecuteIfOveloaded(const Method: TQueueMethod);
+    constructor Create(const ThreadsPerCore: integer = 1; const AdditionalThreads: integer = 0);
     destructor Destroy; override;
   end;
 
@@ -96,10 +100,8 @@ type
     procedure ExecuteDelayMethods;
   public
     procedure Clear; override;
-    procedure AddMethodDelay(const Method: TQueueMethod;
-      const DelayMilliseconds: QWord);
-    constructor Create(const ThreadsPerCore: integer = 1;
-      const AdditionalThreads: integer = 0);
+    procedure AddMethodDelay(const Method: TQueueMethod; const DelayMilliseconds: QWord);
+    constructor Create(const ThreadsPerCore: integer = 1; const AdditionalThreads: integer = 0);
     destructor Destroy; override;
   end;
 
@@ -178,10 +180,12 @@ begin
 end;
 
 destructor TQueueManagerWithDelays.Destroy;
+var
+  dl : TLocker;
 begin
-  Clear;
-  DelayLocker.Free;
+  dl := DelayLocker;
   inherited Destroy;
+  dl.Free;
 end;
 
 { TQueueManager }
@@ -199,6 +203,7 @@ begin
   try
     for i := low(fList) to High(fList) do
       fList[i].Method := nil;
+    FMethodCount:=0;
   finally
     Locker.Unlock;
   end;
@@ -209,38 +214,49 @@ var
   q: TQueueRecord;
   i: word;
 begin
-  if Suspend then
+  if Suspend or (FMethodCount = 0) then
     Exit(False);
-  Locker.Lock;
   try
+    Locker.Lock;
     repeat
       q := fList[PostInc(fExecuteIndex)];
       if fExecuteIndex = fAddIndex then
-        Exit(False);
+        Break;
     until (q.Method <> nil);
 
-    if fRemoveRepeated then
+    if q.Method <> nil then
     begin
-      i := fExecuteIndex - 1;
-      repeat
-        if q = fList[i] then
-          fList[i].Method := nil;
-      until PostInc(i) = fAddIndex;
-    end
-    else
-      fList[fExecuteIndex-1].Method:=nil;
+      if fRemoveRepeated then
+      begin
+        i := fExecuteIndex - 1;
+        repeat
+          if q = fList[i] then
+          begin
+            fList[i].Method := nil;
+            Dec(FMethodCount);
+          end;
+        until PostInc(i) = fAddIndex;
+      end
+      else
+      begin
+        fList[Word(fExecuteIndex-1)].Method:=nil;
+        Dec(FMethodCount);
+      end;
+    end;
   finally
     Locker.Unlock;
   end;
 
   try
-    if q.Method <> nil then
+    if (q.MethodPointer <> nil) and (q.ObjectInstance <> nil) then
       q.Method();
   except
     on E:Exception do RaiseException('Exception in queue method: ' + E.Message, False);
   end;
 
   Result := fExecuteIndex <> fAddIndex;
+  if not Result then
+    FEvent.Reset;
 end;
 
 procedure TQueueManager.DequeueObject(obj: TObject);
@@ -251,7 +267,10 @@ begin
   try
     for i := low(FList) to High(FList) do
       if Obj = fList[i].ObjectInstance then
+      begin
         fList[i].Method := nil;
+        Dec(FMethodCount);
+      end;
   finally
     Locker.Unlock;
   end;
@@ -263,11 +282,21 @@ var
 begin
   q.Method := Method;
   Locker.Lock;
+  FEvent.SetUp;
   try
     fList[PostInc(fAddIndex)] := q;
+    Inc(FMethodCount);
   finally
     Locker.Unlock;
   end;
+end;
+
+procedure TQueueManager.AddOrExecuteIfOveloaded(const Method: TQueueMethod);
+begin
+  if QueuedMethodCount >= ThreadCount then
+     Method()
+     else
+     AddMethod(Method);
 end;
 
 constructor TQueueManager.Create(const ThreadsPerCore: integer;
@@ -279,10 +308,12 @@ begin
   fRemoveRepeated := True;
   fAddIndex := 0;
   fExecuteIndex := 0;
+  FMethodCount := 0;
   Locker := TLocker.Create;
   FCoreCount := GetCoreCount;
   FThreadCount := max(1, AdditionalThreads + ThreadsPerCore * CoreCount);
   setlength(Threads, ThreadCount);
+  FEvent := TRTLEvent.Create;
   Clear;
   for i := 0 to ThreadCount - 1 do
     Threads[i] := TQueueThread.Create(self);
@@ -297,16 +328,22 @@ begin
   setlength(Threads, 0);
   Locker.WaitForUnlock;
   Locker.Free;
+  FEvent.Free;
   inherited Destroy;
 end;
 
 { TQueueThread }
 
+procedure TQueueThread.WaitForNext;
+begin
+  fManager.FEvent.WaitFor(10);
+end;
+
 procedure TQueueThread.Execute;
 begin
   repeat
     if not fManager.ExecuteMethod then
-      SleepMicroseconds(10);
+      WaitForNext;
   until fTerminating;
 end;
 
@@ -315,7 +352,6 @@ begin
   fTerminating := False;
   fManager := Manager;
   inherited Create(False);
-  Priority := tpHigher;
 end;
 
 destructor TQueueThread.Destroy;
