@@ -6,7 +6,7 @@ interface
 
 uses
   cThreads, SysUtils, Classes, Queues, Math, IniFiles, Locker,
-  FPImage, spidev, v4l1, YUV2Camera;
+  FPImage, spidev, v4l1, YUV2Camera, NeuronImg;
 
 type
 
@@ -16,9 +16,9 @@ type
 
   TSeedAnalyser = class
   private
-    FTable: array[byte, byte, byte] of boolean;
     FQueue: TQueueManager;
-
+    FNeuron : TNeuron;
+  
     Camera: TYUV2Camera;
     AreaLocker: TLocker;
     FWidth, FHeight: integer;
@@ -26,18 +26,13 @@ type
     FAreaCount: integer;
     FAreas: array of TDoubleRect;
     FAreaStatus: array of boolean;
-    FAreaBorder: double;
     function GetNextArea: integer;
     procedure Capture;
     procedure Analicys;
-    function MarkFromCamera(const Rect: TDoubleRect): double;
+    function MarkFromCamera(const Rect: TDoubleRect): double; inline;
   public
     property AreaCount: integer read FAreaCount;
-    procedure LoadTable(Stream: TStream; const BorderMin: double = 0;
-      const BorderMax: double = 1); overload;
-    procedure LoadTable(const Path: ansistring; const BorderMin: double = 0;
-      const BorderMax: double = 1); overload;
-    function GetAreaStatus(const Index: integer): boolean;
+    function GetAreaStatus(const Index: integer): boolean; inline;
     function GetStatus: ansistring;
 
     constructor Create(const ConfigFile: TIniFile);
@@ -61,54 +56,8 @@ begin
 end;
 
 function TSeedAnalyser.MarkFromCamera(const Rect: TDoubleRect): double;
-var
-  c: TFPColor;
-  x, y, Count: integer;
 begin
-  Count := 0;
-  for x := EnsureRange(round(FWidth * Rect.Left), 0, FWidth)
-    to EnsureRange(round(FWidth * Rect.Right), 1, FWidth) - 1 do
-    for y := EnsureRange(round(FHeight * Rect.Top), 0, FHeight)
-      to EnsureRange(round(FHeight * Rect.Bottom), 1, FHeight) - 1 do
-    begin
-      c := Camera.GetColor(x, y);
-      if FTable[(c.red shr 8) and $FF, (c.green shr 8) and $FF, (c.blue shr 8) and $FF] then
-        Inc(Count);
-    end;
-  Result := Count / (FWidth * FHeight * (Rect.Right - Rect.Left) *
-    (Rect.Bottom - Rect.Top));
-end;
-
-procedure TSeedAnalyser.LoadTable(Stream: TStream; const BorderMin: double = 0;
-  const BorderMax: double = 1);
-var
-  r, g, b, i: integer;
-  TempTable : PDouble;
-  TempSize : Integer;
-begin
-  TempSize := SizeOf(Double)*(256**3);
-  TempTable := AllocMem(TempSize);
-  i := 0;
-  Stream.ReadBuffer(TempTable^, TempSize);
-  for r := 0 to 255 do
-    for g := 0 to 255 do
-      for b := 0 to 255 do
-      begin
-        FTable[r, g, b] := InRange(TempTable[i], BorderMin, BorderMax);
-        Inc(i);
-      end;
-  FreeMem(TempTable);
-end;
-
-procedure TSeedAnalyser.LoadTable(const Path: ansistring;
-  const BorderMin: double = 0; const BorderMax: double = 1);
-var
-  FS: TFileStream;
-begin
-  FS := TFileStream.Create(Path, fmOpenRead);
-  FS.Position := 0;
-  LoadTable(FS, BorderMin, BorderMax);
-  FS.Free;
+  Exit(FNeuron.AnaliseImage(@Camera.GetColor, Round(FWidth*Rect.Left), Round(FHeight*Rect.Top), Round(FWidth*Rect.Right), Round(FHeight*Rect.Bottom)));
 end;
 
 procedure TSeedAnalyser.Capture;
@@ -128,7 +77,7 @@ begin
     for j := 0 to FAreaCount - 1 do
     begin
       i := GetNextArea;
-      FAreaStatus[i] := MarkFromCamera(FAreas[i]) > FAreaBorder;
+      FAreaStatus[i] := MarkFromCamera(FAreas[i]) < 0;
     end;
   finally
     FQueue.AddMethod(@Analicys);
@@ -165,6 +114,7 @@ constructor TSeedAnalyser.Create(const ConfigFile: TIniFile);
 var
   i: integer;
   SectionName: ansistring;
+  FS : TFileStream;
 begin
   FQueue := TQueueManager.Create(1, 1);
   FQueue.RemoveRepeated := False;
@@ -174,11 +124,11 @@ begin
   Camera := TYUV2Camera.Create(FWidth, FHeight, GetCameraDevice);
   Camera.Open;
   FQueue.AddMethod(@Capture);
-  LoadTable(ConfigFile.ReadString('Global', 'TablePath', '../config/ColorTable.bin'),
-    ConfigFile.ReadFloat('Global', 'MinAreaBorder', 0),
-    ConfigFile.ReadFloat('Global', 'MaxAreaBorder', 1));
+  FS := TFileStream.Create(ConfigFile.ReadString('Global', 'NeuronPath', '../config/Neuron.bin'), fmOpenRead);
 
-  FAreaBorder := ConfigFile.ReadFloat('Global', 'AreaBorder', 0.0008);
+  FNeuron := TNeuron.Create(FS);
+  FS.Free;
+  
   FAreaIndex := 0;
   FAreaCount := ConfigFile.ReadInteger('Global', 'DetectAreaCount', 0);
   SetLength(FAreas, FAreaCount);

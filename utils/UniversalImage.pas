@@ -1,5 +1,5 @@
 {
-  Copyright (C) 2020 Paweł Bielecki pawelek24@op.pl / pbielecki2000@gmail.com
+  Copyright (C) 2021 Paweł Bielecki pawelek24@op.pl / pbielecki2000@gmail.com
 
   This source is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free
@@ -24,10 +24,7 @@ unit UniversalImage;
 interface
 
 uses
-  SysUtils, Classes, Math, FpImage, fpreadbmp, fpwritebmp,
-  fpreadjpeg, fpwritejpeg, fpreadpng, fpwritepng, fpreadpnm, fpwritepnm,
-  fpreadtga, fpwritetga, fpreadtiff, fpwritetiff, fpreadxpm, fpwritexpm,
-  fpreadpcx, fpwritepcx, FPImgCanv, matrix;
+  SysUtils, Classes, Math, FpImage, FPImgCanv, matrix;
 
 type
   TPoint = record
@@ -39,18 +36,24 @@ type
   { TUniversalImage }
 
   TUniversalImage = class(TFPCustomImage)
+  private
+    function GetCanvas: TFPImageCanvas;
   protected
     FData : array of array of TFPColor;
     FCanvas : TFPImageCanvas;
 
     function GetReader(const Ext : ansistring) : TFPCustomImageReader;
     function GetWriter(const Ext : ansistring) : TFPCustomImageWriter;
-    function GetInternalColor(x, y : integer) : TFPColor; override;
-    procedure SetInternalColor(x, y : integer; const Value : TFPColor); override;
     function GetInternalPixel(x, y : integer) : integer; override; //Ignores Palette
     procedure SetInternalPixel(x, y : integer; Value : integer); override;
+
+    function GetInternalColor(x, y : integer) : TFPColor; override;
+    procedure SetInternalColor(x, y : integer; const Value : TFPColor); override;
   public
-    property Canvas : TFPImageCanvas read FCanvas;
+    property Canvas : TFPImageCanvas read GetCanvas;
+
+    function GetDirectColor(const x, y : integer) : TFPColor; 
+    procedure SetDirectColor(const x, y : integer; const Value : TFPColor); 
   
     //need FreeMem()
     function GetGLBuffer : PLongWord; //RGBA
@@ -64,19 +67,20 @@ type
 
     function CreateMipmap(const Level : integer) : TUniversalImage;
 
-    property DirectColor[x, y : integer] : TFPColor
-      read GetInternalColor write SetInternalColor; default;
+    property DirectColor[const x, y : integer] : TFPColor
+      read GetDirectColor write SetDirectColor; default;
     procedure SaveToFile(const FileName : ansistring); overload;
     procedure SaveToFile(const FileName : ansistring; const UseAlpha : Boolean); overload; //only PNG 
     procedure SaveToFile(const FileName : ansistring; const Quality : Integer); overload; //only JPG
 
-    procedure LoadFromFile(const FileName : ansistring); overload;
+    procedure LoadFromFile(const FileName : ansistring); overload;                                                                               
+    procedure SetSize(AWidth, AHeight : integer); override;
+    procedure Draw(const PositionX, PositionY : integer; Img : TUniversalImage; const Transparency : double = 0; DrawFunction : TDrawFunction = nil);
+
     constructor CreateEmpty; virtual;
     constructor Create(AWidth, AHeight : integer); override;
     constructor CreateSubImage(Image : TUniversalImage; const Left, Top, Right, Bottom : Integer); virtual;
     destructor Destroy; override;
-    procedure SetSize(AWidth, AHeight : integer); override;
-    procedure Draw(const PositionX, PositionY : integer; Img : TUniversalImage; const Transparency : double = 0; DrawFunction : TDrawFunction = nil);
   end;
 
   { TUniversalTransformationImage }
@@ -125,6 +129,11 @@ function FpColor(red, green, blue, alpha : word) : TFPColor; inline;
 operator = (const a, b : TFPColor) : boolean; inline;
 
 implementation
+
+uses
+  fpreadbmp, fpwritebmp, fpreadjpeg, fpwritejpeg, fpreadpng, fpwritepng,
+  fpreadpnm, fpwritepnm, fpreadtga, fpwritetga, fpreadtiff, fpwritetiff,
+  fpreadxpm, fpwritexpm, fpreadpcx, fpwritepcx;
 
 function PostInc(var i : Integer) : Integer;
 begin
@@ -324,6 +333,16 @@ begin
   FData[x, y] := Value;
 end;
 
+function TUniversalImage.GetDirectColor(const x, y : integer) : TFPColor; 
+begin
+  Result := FData[x, y];
+end;
+
+procedure TUniversalImage.SetDirectColor(const x, y : integer; const Value : TFPColor); 
+begin
+  FData[x, y] := Value;
+end;
+
 function TUniversalImage.GetInternalPixel(x, y : integer) : integer;
 begin
   Result :=
@@ -437,6 +456,13 @@ begin
     end;
 end;
 
+function TUniversalImage.GetCanvas: TFPImageCanvas;
+begin
+  if FCanvas = nil then
+     FCanvas := TFPImageCanvas.Create(Self);
+  Exit(FCanvas);
+end;
+
 function TUniversalImage.GetReader(const Ext : ansistring) : TFPCustomImageReader;
 begin
   if SameText(Ext, '.bmp') then
@@ -533,7 +559,7 @@ begin
   setlength(FData, AWidth, AHeight);
   inherited Create(AWidth, AHeight);
   SetUsePalette(False);
-  FCanvas := TFPImageCanvas.Create(Self);
+  FCanvas := nil;
 end;
 
 constructor TUniversalImage.CreateSubImage(Image : TUniversalImage; const Left, Top, Right, Bottom : Integer); 
@@ -551,9 +577,10 @@ end;
 
 destructor TUniversalImage.Destroy;
 begin
-    FCanvas.Free;
-    SetLength(FData, 0, 0);
-    inherited Destroy;
+  if Canvas <> nil then
+    FreeAndNil(FCanvas);
+  SetLength(FData, 0, 0);
+  inherited Destroy;
 end;
 
 procedure TUniversalImage.SetSize(AWidth, AHeight : integer);

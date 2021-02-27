@@ -1,3 +1,4 @@
 Step 2
-  Wait while the program starts first time. It is calibrating gpio pins with electromagnets and areas. 
+  Wait while the program starts for the first time. 
+  It is calibrating gpio pins with electromagnets and areas. 
   This should take 30 seconds.

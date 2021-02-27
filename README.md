@@ -10,6 +10,6 @@ How to run first time:
 2. make Service
 3. make walkthrough
 
-Software sends square signal (60Hz) on gpio pin when seed for rejection is in a selected area.
+Software sends square signal (17Hz) on gpio pin when seed for rejection is in a selected area.
 
 Photos of the machine in the future.

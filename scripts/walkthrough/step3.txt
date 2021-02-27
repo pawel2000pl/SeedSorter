@@ -11,6 +11,6 @@ Step 3
   
   After typing recommended command you can type 'sudo reboot' to reboot the computer.
   And then you can use buttons:
-    * click green: start analyser
-    * click red: stop analyser
-    * push red till status diode will blink: shutdown the computer (required before switching power off)
+    * push green (for about 1s): start analyser
+    * push red (for about 2s): stop analyser
+    * push red (for about 10s) till status diode will blink: shutdown the computer (required before switching power off)
