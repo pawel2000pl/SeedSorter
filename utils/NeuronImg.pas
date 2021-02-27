@@ -234,6 +234,7 @@ var
     d : Single;
     MisSamples : array of TSampleImage;
     Sample : TSampleImage;
+    TrueSpeed : Double;
 begin
     Iterations := 0;
     
@@ -249,13 +250,15 @@ begin
                 MisSamples[Mistakes-1] := Sample;
             end;
         
+        TrueSpeed := Speed * (1-Iterations/(1+MaxIterations));
+        
         for Sample in MisSamples do
         begin
             if Sample.Verdict then
                 d := -1
             else
                 d := 1;   
-            CorrectProbe(Sample.Image, d, Speed);
+            CorrectProbe(Sample.Image, d, TrueSpeed);
             Addiction += d * Speed;
         end;
 

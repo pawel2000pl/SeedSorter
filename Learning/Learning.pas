@@ -1,15 +1,15 @@
 program Demo;
 
 {$Mode ObjFpc}
-//{$Define FitSize}
+{$Define FitSize}
 
 uses
     SysUtils, Classes, FPImage, UniversalImage, NeuronImg, math, IniFiles;
 
 var
     Samples : array of TSampleImage;
-    NeuronWidth : Integer = 32;
-    NeuronHeight : Integer = 32;
+    NeuronWidth : Integer = 64;
+    NeuronHeight : Integer = 64;
 
 function CreateMirrorImage1(Image : TUniversalImage) : TUniversalImage;  
 var
@@ -128,11 +128,16 @@ end;
    
 begin    
     LoadSamples;
-
+    
+    {$IfDef FitSize}
+    Dec(NeuronWidth);
+    Dec(NeuronHeight);
+    {$endif}
+    
     Writeln('Learning for size: ', NeuronWidth, 'x', NeuronHeight);
     Neuron := TNeuron.Create(NeuronWidth, NeuronHeight);
     //Neuron.AddRandomState;
-    Writeln(Neuron.Learn(Samples, 0.1, $10000, True));
+    Writeln(Neuron.Learn(Samples, 0.1, 3000, True));
     SaveToIni();
     
     Neuron.Free;    
