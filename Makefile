@@ -26,6 +26,7 @@ configure:
 	./Configurator/SeedSorterConfigurator
 
 learn:
+	rm -f ~/.seedsorter/Marked/*
 	./Learning/Learning -t `ls ~/.seedsorter/true/*` -f `ls ~/.seedsorter/false/*`	
 	
 Configurator/SeedSorterConfigurator: Configurator
