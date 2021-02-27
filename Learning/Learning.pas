@@ -8,6 +8,8 @@ uses
 
 var
     Samples : array of TSampleImage;
+    MinWidth : Integer = 32;
+    MinHeight : Integer = 32;
 
 function CreateMirrorImage1(Image : TUniversalImage) : TUniversalImage;  
 var
@@ -48,6 +50,10 @@ procedure LoadSamples;
     begin
         image := TUniversalImage.CreateEmpty;
         image.LoadFromFile(FileName);
+        if Image.Width < MinWidth then
+            MinWidth := Image.Width;
+        if Image.Height < MinHeight then
+            MinHeight := Image.Height;
         c := Length(Samples);
         SetLength(Samples, c+4);
         Samples[c].Image := image;
@@ -121,7 +127,8 @@ end;
 begin    
     LoadSamples;
 
-    Neuron := TNeuron.Create(32, 32);
+    Writeln('Learning for size: ', MinWidth, 'x', MinHeight);
+    Neuron := TNeuron.Create(MinWidth, MinHeight);
     //Neuron.AddRandomState;
     Writeln(Neuron.Learn(Samples, 0.1, $10000));
     SaveToIni();
