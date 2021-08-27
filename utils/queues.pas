@@ -67,6 +67,7 @@ type
     FCoreCount: integer;
     FMethodCount : Integer;
     FEvent : TRTLEvent;
+    FStackSizePerThread : PtrUInt;
 
     FThreadCount: integer;
     Threads: array of TQueueThread;
@@ -86,7 +87,7 @@ type
     procedure DequeueObject(obj: TObject); virtual;
     procedure AddMethod(const Method: TQueueMethod); virtual;
     procedure AddOrExecuteIfOveloaded(const Method: TQueueMethod);
-    constructor Create(const ThreadsPerCore: integer = 1; const AdditionalThreads: integer = 0);
+    constructor Create(const ThreadsPerCore: integer = 1; const AdditionalThreads: integer = 0; const StackSizePerThread : PtrUInt = DefaultStackSize);
     destructor Destroy; override;
   end;
 
@@ -101,7 +102,7 @@ type
   public
     procedure Clear; override;
     procedure AddMethodDelay(const Method: TQueueMethod; const DelayMilliseconds: QWord);
-    constructor Create(const ThreadsPerCore: integer = 1; const AdditionalThreads: integer = 0);
+    constructor Create(const ThreadsPerCore: integer = 1; const AdditionalThreads: integer = 0; const StackSizePerThread : PtrUInt = DefaultStackSize);
     destructor Destroy; override;
   end;
 
@@ -170,12 +171,12 @@ begin
 end;
 
 constructor TQueueManagerWithDelays.Create(const ThreadsPerCore: integer;
-  const AdditionalThreads: integer);
+  const AdditionalThreads: integer; const StackSizePerThread: PtrUInt);
 begin
   DelayLocker := TLocker.Create;
   fDelayListCount := 0;
   setlength(fDelayList, fDelayListCount);
-  inherited Create(max(0, ThreadsPerCore), max(AdditionalThreads, 0) + 1);
+  inherited Create(max(0, ThreadsPerCore), max(AdditionalThreads, 0) + 1, StackSizePerThread);
   AddMethod(@ExecuteDelayMethods);
 end;
 
@@ -300,10 +301,11 @@ begin
 end;
 
 constructor TQueueManager.Create(const ThreadsPerCore: integer;
-  const AdditionalThreads: integer);
+  const AdditionalThreads: integer; const StackSizePerThread: PtrUInt);
 var
   i: integer;
 begin
+  FStackSizePerThread:=StackSizePerThread;
   Suspend := False;
   fRemoveRepeated := True;
   fAddIndex := 0;
@@ -351,7 +353,7 @@ constructor TQueueThread.Create(Manager: TQueueManager);
 begin
   fTerminating := False;
   fManager := Manager;
-  inherited Create(False);
+  inherited Create(False, fManager.FStackSizePerThread);
 end;
 
 destructor TQueueThread.Destroy;
