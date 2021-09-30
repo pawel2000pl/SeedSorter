@@ -72,12 +72,7 @@ begin
       to EnsureRange(round(FHeight * Rect.Bottom), 1, FHeight) - 1 do
     begin
       c := Camera.GetColor(x, y);
-<<<<<<< HEAD
       if FTable[(c.red shr 8) and $FF, (c.green shr 8) and $FF, (c.blue shr 8) and $FF] then
-=======
-      if FTable[(c.red shr 8) and $FF, (c.green shr 8) and $FF,
-        (c.blue shr 8) and $FF] then
->>>>>>> a214b0f1a129aa47e5a2739e5510db59aa217a96
         Inc(Count);
     end;
   Result := Count / (FWidth * FHeight * (Rect.Right - Rect.Left) *
@@ -87,7 +82,6 @@ end;
 procedure TSeedAnalyser.LoadTable(Stream: TStream; const BorderMin: double = 0;
   const BorderMax: double = 1);
 var
-<<<<<<< HEAD
   r, g, b, i: integer;
   TempTable : PDouble;
   TempSize : Integer;
@@ -96,25 +90,14 @@ begin
   TempTable := AllocMem(TempSize);
   i := 0;
   Stream.ReadBuffer(TempTable^, TempSize);
-=======
-  r, g, b: integer;
-  d: double;
-begin
->>>>>>> a214b0f1a129aa47e5a2739e5510db59aa217a96
   for r := 0 to 255 do
     for g := 0 to 255 do
       for b := 0 to 255 do
       begin
-<<<<<<< HEAD
         FTable[r, g, b] := InRange(TempTable[i], BorderMin, BorderMax);
         Inc(i);
       end;
   FreeMem(TempTable);
-=======
-        Stream.ReadBuffer(d, SizeOf(d));
-        FTable[r, g, b] := InRange(d, BorderMin, BorderMax);
-      end;
->>>>>>> a214b0f1a129aa47e5a2739e5510db59aa217a96
 end;
 
 procedure TSeedAnalyser.LoadTable(const Path: ansistring;
@@ -208,11 +191,7 @@ begin
     FAreas[i].Top := ConfigFile.ReadFloat(SectionName, 'Top', 0);
     FAreas[i].Bottom := ConfigFile.ReadFloat(SectionName, 'Bottom', 0);
   end;
-<<<<<<< HEAD
   for i := 0 to max(1, FQueue.CoreCount - 1) do
-=======
-  for i := 0 to max(1, FQueue.CoreCount - 2) do
->>>>>>> a214b0f1a129aa47e5a2739e5510db59aa217a96
     FQueue.AddMethod(@Analicys);
 end;
 
@@ -220,10 +199,7 @@ constructor TSeedAnalyser.Create(const PathToConfigFile: ansistring);
 var
   i: TIniFile;
 begin
-<<<<<<< HEAD
   randomize;
-=======
->>>>>>> a214b0f1a129aa47e5a2739e5510db59aa217a96
   i := TIniFile.Create(PathToConfigFile);
   Create(i);
   i.Free;
