@@ -1,15 +1,15 @@
-//instantfpc -B -O4 Demo.pas -t `ls learning/true/*` -f `ls learning/false/*`
-
 program Demo;
+
 {$Mode ObjFpc}
+//{$Define FitSize}
 
 uses
     SysUtils, Classes, FPImage, UniversalImage, NeuronImg, math, IniFiles;
 
 var
     Samples : array of TSampleImage;
-    MinWidth : Integer = 32;
-    MinHeight : Integer = 32;
+    NeuronWidth : Integer = 32;
+    NeuronHeight : Integer = 32;
 
 function CreateMirrorImage1(Image : TUniversalImage) : TUniversalImage;  
 var
@@ -50,10 +50,12 @@ procedure LoadSamples;
     begin
         image := TUniversalImage.CreateEmpty;
         image.LoadFromFile(FileName);
-        if Image.Width < MinWidth then
-            MinWidth := Image.Width;
-        if Image.Height < MinHeight then
-            MinHeight := Image.Height;
+        {$IfDef FitSize}
+        if Image.Width < NeuronWidth then
+            NeuronWidth := Image.Width;
+        if Image.Height < NeuronHeight then
+            NeuronHeight := Image.Height;
+        {$EndIf}
         c := Length(Samples);
         SetLength(Samples, c+4);
         Samples[c].Image := image;
@@ -127,10 +129,10 @@ end;
 begin    
     LoadSamples;
 
-    Writeln('Learning for size: ', MinWidth, 'x', MinHeight);
-    Neuron := TNeuron.Create(MinWidth, MinHeight);
+    Writeln('Learning for size: ', NeuronWidth, 'x', NeuronHeight);
+    Neuron := TNeuron.Create(NeuronWidth, NeuronHeight);
     //Neuron.AddRandomState;
-    Writeln(Neuron.Learn(Samples, 0.1, $10000));
+    Writeln(Neuron.Learn(Samples, 0.1, $10000, True));
     SaveToIni();
     
     Neuron.Free;    

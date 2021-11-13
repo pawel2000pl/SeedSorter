@@ -40,7 +40,7 @@ type
         function AnaliseImage(const ColorFunction : TColorFunction; const Left, Top, Right, Bottom : Integer) : Single; overload;
 
         procedure CorrectProbe(Image : TUniversalImage; const ExpectedValue, Speed : Single);
-        function Learn(const samples : array of TSampleImage; const Speed : Single = 0.2; const MaxIterations : PtrUInt = $10000) : Boolean;
+        function Learn(const samples : array of TSampleImage; const Speed : Single = 0.2; const MaxIterations : PtrUInt = $10000; const PrintPercentage : Boolean = False) : Boolean;
 
         function CreateMap : TUniversalImage;
         
@@ -227,7 +227,7 @@ begin
             AddToInput(x/Image.Width, y/Image.Height, TSingleColor(Image.DirectColor[x, y]) * TrueSpeed * ExpectedValue);
 end;
 
-function TNeuron.Learn(const samples : array of TSampleImage; const Speed : Single; const MaxIterations : PtrUInt) : Boolean;
+function TNeuron.Learn(const samples : array of TSampleImage; const Speed : Single; const MaxIterations : PtrUInt; const PrintPercentage : Boolean) : Boolean;
 var
     Iterations : PtrUInt;
     Mistakes : Integer;
@@ -259,7 +259,8 @@ begin
             Addiction += d * Speed;
         end;
 
-        //writeln(Iterations, #9, 100-Mistakes/Length(Samples)*100:3:2, '%');
+        if PrintPercentage then
+            writeln(Iterations, #9, 100-Mistakes/Length(Samples)*100:3:2, '%');
         
         Inc(Iterations);
     until (Mistakes = 0) or (Iterations > MaxIterations);
