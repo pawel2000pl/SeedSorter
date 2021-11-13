@@ -29,7 +29,7 @@ type
     function GetNextArea: integer;
     procedure Capture;
     procedure Analicys;
-    function MarkFromCamera(const Rect: TDoubleRect): double; inline;
+    function MarkFromCamera(const Rect: TDoubleRect): Boolean; inline;
   public
     property AreaCount: integer read FAreaCount;
     function GetAreaStatus(const Index: integer): boolean; inline;
@@ -55,9 +55,9 @@ begin
   Result := '';
 end;
 
-function TSeedAnalyser.MarkFromCamera(const Rect: TDoubleRect): double;
+function TSeedAnalyser.MarkFromCamera(const Rect: TDoubleRect): Boolean;
 begin
-  Exit(FNeuron.AnaliseImage(@Camera.GetColor, Round(FWidth*Rect.Left), Round(FHeight*Rect.Top), Round(FWidth*Rect.Right), Round(FHeight*Rect.Bottom)));
+  Exit(FNeuron.AnaliseImageBin(@Camera.GetColor, Round(FWidth*Rect.Left), Round(FHeight*Rect.Top), Round(FWidth*Rect.Right), Round(FHeight*Rect.Bottom)));
 end;
 
 procedure TSeedAnalyser.Capture;
@@ -77,7 +77,7 @@ begin
     for j := 0 to FAreaCount - 1 do
     begin
       i := GetNextArea;
-      FAreaStatus[i] := MarkFromCamera(FAreas[i]) < 0;
+      FAreaStatus[i] := MarkFromCamera(FAreas[i]);
     end;
   finally
     FQueue.AddMethod(@Analicys);

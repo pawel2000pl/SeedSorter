@@ -20,6 +20,8 @@ type
     TColorFunction = function(const x, y : Integer) : TFPColor of object;
     
     TNeuron = class
+    const 
+        CutOffValue = -1;
     private
         FWidth, FHeight : Integer;
         Inputs : array of array of TSingleColor;
@@ -34,10 +36,13 @@ type
         procedure SaveToStream(Stream : TStream);
         procedure LoadFromStream(Stream : TStream);
 
-        procedure AddRandomState;
+        procedure AddRandomState(const Mean : Double = 0; const StdDev : Double = 1);
     
         function AnaliseImage(Image : TUniversalImage) : Single;
         function AnaliseImage(const ColorFunction : TColorFunction; const Left, Top, Right, Bottom : Integer) : Single; overload;
+
+        function AnaliseImageBin(Image : TUniversalImage) : Boolean;
+        function AnaliseImageBin(const ColorFunction : TColorFunction; const Left, Top, Right, Bottom : Integer) : Boolean; overload;
 
         procedure CorrectProbe(Image : TUniversalImage; const ExpectedValue, Speed : Single);
         function Learn(const samples : array of TSampleImage; const Speed : Single = 0.2; const MaxIterations : PtrUInt = $10000; const PrintPercentage : Boolean = False) : Boolean;
@@ -184,18 +189,18 @@ begin
     Result := Inputs[ix+1, iy+1] * fx * fy + Inputs[ix+1, iy] * fx * (1-fy) + Inputs[ix, iy+1] * (1-fx) * fy + Inputs[ix, iy] * (1-fx) * (1-fy);
 end;
 
-procedure TNeuron.AddRandomState;
+procedure TNeuron.AddRandomState(const Mean, StdDev : Double);
 var
     x, y : Integer;
 begin
     for x := 0 to FWidth-1 do
         for y := 0 to FHeight-1 do
         begin
-            Inputs[x, y][0] += RandG(0, 1);
-            Inputs[x, y][1] += RandG(0, 1);
-            Inputs[x, y][2] += RandG(0, 1);
+            Inputs[x, y][0] += RandG(Mean, StdDev);
+            Inputs[x, y][1] += RandG(Mean, StdDev);
+            Inputs[x, y][2] += RandG(Mean, StdDev);
         end;
-    Addiction += RandG(0, 1);
+    Addiction += RandG(Mean, StdDev);
 end;
 
 function TNeuron.AnaliseImage(Image : TUniversalImage) : Single;
@@ -214,6 +219,16 @@ begin
         for y := Top to Bottom do
             Result += GetInput((x-Left)/w, (y-Top)/h)*TSingleColor(ColorFunction(x, y));
     Result := Result / (w*h) + Addiction;
+end;
+
+function TNeuron.AnaliseImageBin(Image : TUniversalImage) : Boolean;
+begin
+    Exit(AnaliseImage(Image)<CutOffValue);
+end;
+
+function TNeuron.AnaliseImageBin(const ColorFunction : TColorFunction; const Left, Top, Right, Bottom : Integer) : Boolean; overload;
+begin
+    Exit(AnaliseImage(ColorFunction, Left, Top, Right, Bottom)<CutOffValue);
 end;
 
 procedure TNeuron.CorrectProbe(Image : TUniversalImage; const ExpectedValue, Speed : Single);
@@ -243,14 +258,14 @@ begin
         SetLength(MisSamples, 0);
 
         for Sample in Samples do
-            if (AnaliseImage(Sample.Image) < 0) <> Sample.Verdict then
+            if AnaliseImageBin(Sample.Image) <> Sample.Verdict then
             begin
                 Inc(Mistakes);
                 SetLength(MisSamples, Mistakes);
                 MisSamples[Mistakes-1] := Sample;
             end;
         
-        TrueSpeed := Speed * (1-Iterations/(1+MaxIterations));
+        TrueSpeed := Speed * (1-Iterations/(1+MaxIterations)) * abs(RandG(0, 1));
         
         for Sample in MisSamples do
         begin
