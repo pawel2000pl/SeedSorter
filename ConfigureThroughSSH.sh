@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DEVICES=`ip address show | grep DOWN | cut -f 2 -d " " | cut -f 1 -d ":" | grep -P [0-9]+`
+DEVICES=`ip address show | cut -f 2 -d " " | cut -f 1 -d ":" | grep -P [0-9]+`
 DEVICE_COUNT=`echo $DEVICES | wc -w`
 
 if [ $DEVICE_COUNT -gt 1 ]
