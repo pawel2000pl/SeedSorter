@@ -14,6 +14,7 @@ type
 
     TSampleImage = record
         Image : TUniversalImage;
+        Name : AnsiString;
         Verdict : Boolean;
     end;
 
@@ -45,7 +46,7 @@ type
         function AnaliseImageBin(const ColorFunction : TColorFunction; const Left, Top, Right, Bottom : Integer) : Boolean; overload;
 
         procedure CorrectProbe(Image : TUniversalImage; const ExpectedValue, Speed : Single);
-        function Learn(const samples : array of TSampleImage; const Speed : Single = 0.2; const MaxIterations : PtrUInt = $10000; const PrintPercentage : Boolean = False) : Boolean;
+        function Learn(const samples : array of TSampleImage; const Speed : Single = 0.2; const MaxIterations : PtrUInt = $10000; const StopPercentage : Double = 0.97; const PrintPercentage : Boolean = False) : Boolean;
 
         function CreateMap : TUniversalImage;
         
@@ -242,7 +243,7 @@ begin
             AddToInput(x/Image.Width, y/Image.Height, TSingleColor(Image.DirectColor[x, y]) * TrueSpeed * ExpectedValue);
 end;
 
-function TNeuron.Learn(const samples : array of TSampleImage; const Speed : Single; const MaxIterations : PtrUInt; const PrintPercentage : Boolean) : Boolean;
+function TNeuron.Learn(const samples : array of TSampleImage; const Speed : Single; const MaxIterations : PtrUInt; const StopPercentage : Double; const PrintPercentage : Boolean) : Boolean;
 var
     Iterations : PtrUInt;
     Mistakes : Integer;
@@ -250,6 +251,7 @@ var
     MisSamples : array of TSampleImage;
     Sample : TSampleImage;
     TrueSpeed : Double;
+    Percentage : Double;
 begin
     Iterations := 0;
     
@@ -276,12 +278,17 @@ begin
             CorrectProbe(Sample.Image, d, TrueSpeed);
             Addiction += d * Speed;
         end;
+        Percentage := 1-Mistakes/Length(Samples);
 
         if PrintPercentage then
-            writeln(Iterations, #9, 100-Mistakes/Length(Samples)*100:3:2, '%');
+            writeln(Iterations, #9, Percentage*100:3:2, '%');
         
         Inc(Iterations);
-    until (Mistakes = 0) or (Iterations > MaxIterations);
+    until (Mistakes = 0) or (Iterations > MaxIterations) or (Percentage > StopPercentage);
+
+    if PrintPercentage then
+        for Sample in MisSamples do
+            Writeln('Problem with: ', Sample.Name);
 
     Result := not (Iterations > MaxIterations);
 end;

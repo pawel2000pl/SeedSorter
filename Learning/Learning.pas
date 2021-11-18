@@ -60,13 +60,17 @@ procedure LoadSamples;
         SetLength(Samples, c+4);
         Samples[c].Image := image;
         Samples[c].Verdict := Verdict;
+        Samples[c].Name := FileName;
         
         Samples[c+1].Image := CreateMirrorImage1(image);
         Samples[c+1].Verdict := Verdict;
+        Samples[c+1].Name := FileName;
         Samples[c+2].Image := CreateMirrorImage2(image);
         Samples[c+2].Verdict := Verdict;
+        Samples[c+2].Name := FileName;
         Samples[c+3].Image := CreateMirrorImage3(image);
         Samples[c+3].Verdict := Verdict;
+        Samples[c+3].Name := FileName;
     end;
 
 var
@@ -137,7 +141,7 @@ begin
     Writeln('Learning for size: ', NeuronWidth, 'x', NeuronHeight);
     Neuron := TNeuron.Create(NeuronWidth, NeuronHeight);
     //Neuron.AddRandomState;
-    Writeln(Neuron.Learn(Samples, 0.1, 3000, True));
+    Writeln(Neuron.Learn(Samples, 0.2, 3000, 0.97, True));
     SaveToIni();
     
     Neuron.Free;    
