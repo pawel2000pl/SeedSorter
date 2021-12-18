@@ -22,7 +22,7 @@ type
     
     TNeuron = class
     const 
-        CutOffValue = -1;
+        CutOffValue = 0;
     private
         FWidth, FHeight : Integer;
         Inputs : array of array of TSingleColor;

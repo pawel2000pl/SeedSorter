@@ -1,22 +1,23 @@
 all: clear Sorter Learning Configurator GpioController wash
 
 Sorter: 
-	fpc -O3 -Mobjfpc -dUseCThreads -Sh -Si "Analyser/Sorter.pas" "-FuCamera/" "-Fuutils/" "-oSorter"
+	fpc -O3 -OoAUTOINLINE -Mobjfpc -dUseCThreads -Sh -Si "Analyser/Sorter.pas" "-FuCamera/" "-Fuutils/" "-oSorter"
 	
 Learning: 
-	fpc -O3 -Mobjfpc -Sh -Si "Learning/Learning.pas" "-Fuutils/" "-oLearning"
+	fpc -O3 -OoAUTOINLINE -Mobjfpc -Sh -Si "Learning/Learning.pas" "-Fuutils/" "-oLearning"
 	
 Configurator:
 	lazbuild "Configurator/SeedSorterConfigurator.lpr"	
 	
 GpioController:
-	fpc -O3 -Mobjfpc -dUseCThreads -Sh -Si "Gpio/GpioController.pas" "-Fuutils/" "-oGpioController"
+	fpc -O3 -OoAUTOINLINE -Mobjfpc -dUseCThreads -Sh -Si "Gpio/GpioController.pas" "-Fuutils/" "-oGpioController"
 	
 Service: 		
 	chmod u+x "Service/Service.sh"
 	chmod u+x "scripts/copyfiles.sh"
 	bash -i "scripts/copyfiles.sh"
-	instantfpc -B -Mobjfpc -Sh -Si "Service/CreateService.pas" "-oCreateService" > "/dev/shm/seedsorter.service"
+	#instantfpc -B -Mobjfpc -Sh -Si "Service/CreateService.pas" "-oCreateService" > "/dev/shm/seedsorter.service"
+	bash -i "Service/CreateService.sh" > "/dev/shm/seedsorter.service"
 	sudo mv "/dev/shm/seedsorter.service" "/etc/systemd/system/seedsorter.service"
 	
 RemoveService: 
@@ -38,6 +39,7 @@ wash:
 	bash -i "./scripts/clean.sh" "Camera"	
 	bash -i "./scripts/clean.sh" "utils"
 	bash -i "./scripts/clean.sh" "Service"
+	bash -i "./scripts/clean.sh" "Gpio"
 	rm -rf "Configurator/lib"
 	rm -rf "Configurator/backup"
 

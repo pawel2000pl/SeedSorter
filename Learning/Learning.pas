@@ -1,15 +1,15 @@
 program Demo;
 
 {$Mode ObjFpc}
-{$Define FitSize}
+//{$Define FitSize}
 
 uses
     SysUtils, Classes, FPImage, UniversalImage, NeuronImg, math, IniFiles;
 
 var
     Samples : array of TSampleImage;
-    NeuronWidth : Integer = 64;
-    NeuronHeight : Integer = 64;
+    NeuronWidth : Integer = 32;
+    NeuronHeight : Integer = 32;
 
 function CreateMirrorImage1(Image : TUniversalImage) : TUniversalImage;  
 var

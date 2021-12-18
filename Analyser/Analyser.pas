@@ -19,6 +19,9 @@ type
     FQueue: TQueueManager;
     FNeuron : TNeuron;
   
+    AnalisedCount : QWord;
+    FrameCount : QWord;
+  
     Camera: TYUV2Camera;
     AreaLocker: TLocker;
     FWidth, FHeight: integer;
@@ -34,6 +37,8 @@ type
     property AreaCount: integer read FAreaCount;
     function GetAreaStatus(const Index: integer): boolean; inline;
     function GetStatus: ansistring;
+    function GetAnalicysCount(const Reset : Boolean) : QWord;
+    function GetFrameCount(const Reset : Boolean) : QWord;
 
     constructor Create(const ConfigFile: TIniFile);
     constructor Create(const PathToConfigFile: ansistring = '../config/config.ini');
@@ -55,15 +60,31 @@ begin
   Result := '';
 end;
 
+function TSeedAnalyser.GetAnalicysCount(const Reset : Boolean) : QWord;
+begin
+    Result := AnalisedCount;
+    if Reset then
+        AnalisedCount := 0;
+end;
+
+function TSeedAnalyser.GetFrameCount(const Reset : Boolean) : QWord;
+begin
+    Result := FrameCount;
+    if Reset then
+        FrameCount := 0;
+end;
+
 function TSeedAnalyser.MarkFromCamera(const Rect: TDoubleRect): Boolean;
 begin
+  Inc(AnalisedCount);
   Exit(FNeuron.AnaliseImageBin(@Camera.GetColor, Round(FWidth*Rect.Left), Round(FHeight*Rect.Top), Round(FWidth*Rect.Right), Round(FHeight*Rect.Bottom)));
 end;
 
 procedure TSeedAnalyser.Capture;
 begin
   try
-    Camera.GetNextFrame;
+  Camera.GetNextFrame;
+  Inc(FrameCount);
   finally
     FQueue.AddMethod(@Capture);
   end;
@@ -158,11 +179,11 @@ end;
 destructor TSeedAnalyser.Destroy;
 begin
   FQueue.Clear;
-  FQueue.Free;
   Camera.Close;
   Camera.Free;
+  FQueue.Free;
   AreaLocker.Free;
-  inherited Create;
+  inherited Destroy;
 end;
 
 end.
