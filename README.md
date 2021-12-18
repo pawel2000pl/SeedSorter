@@ -12,10 +12,9 @@ How to run first time:
 
 Software sends square signal (17Hz) on gpio pin when seed for rejection is in a selected area.
 
+![Video](Photos/video.webm) / ![Video in FullHD](https://download1472.mediafire.com/eybpd09d5m2g/zxpubwug0rqqun6/20211218_133223.mp4)
+
 Photo-galery
-
-
-![Video](Photos/video.webm)
 
 ![Photo](Photos/20211218_134026.jpg)
 ![Photo](Photos/20211218_134041.jpg)
