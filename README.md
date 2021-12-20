@@ -1,5 +1,6 @@
 # Seed sorter
-Program for sorting bean seeds
+Program for sorting bean seeds. <br>
+The machine and software were designed and created by Paweł Bielecki (pbielecki2000@gmail.com). 
 
 Warning: This software is for embedded system (Raspberry Pi 4) use only!
 Required packages: libv4l-dev fpc lazarus
@@ -12,7 +13,7 @@ How to run first time:
 
 Software sends square signal (17Hz) on gpio pin when seed for rejection is in a selected area.
 
-![Video](Photos/video.webm) / ![Video in FullHD](https://download1472.mediafire.com/eybpd09d5m2g/zxpubwug0rqqun6/20211218_133223.mp4)
+![Video](Photos/video.webm) / [Video in FullHD](https://www.mediafire.com/file/zxpubwug0rqqun6/20211218_133223.mp4/file)
 
 Photo-galery
 
