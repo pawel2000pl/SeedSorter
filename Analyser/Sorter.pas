@@ -37,6 +37,7 @@ begin
     
     repeat
         writeln(SeedAnalyser.GetStatus);
+        Flush(StdOut);
         newTime := GetTickCount64;
         if newTime - time >= 1000 then
         begin
@@ -46,6 +47,7 @@ begin
             Write(StdErr, 'APS=', 1000*apc/((newTime-time)*SeedAnalyser.AreaCount):2:2, #9);
             Write(StdErr, 'FPS=', 1000*fpc/(newTime-time):2:2, #9);
             writeln(StdErr);
+            Flush(StdErr);
             time := newTime;
             
             if (fpc = 0) or (apc = 0) then
