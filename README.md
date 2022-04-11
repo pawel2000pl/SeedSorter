@@ -1,4 +1,7 @@
-# Seed sorter
+Seed sorter 
+===========
+as an embedded system based on artificial intelligence
+------------------------------------------------------
 Program for sorting bean seeds. <br>
 The machine and software were designed and created by Paweł Bielecki (pbielecki2000@gmail.com). 
 
