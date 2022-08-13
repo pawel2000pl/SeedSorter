@@ -4,12 +4,19 @@ program Demo;
 //{$Define FitSize}
 
 uses
-    SysUtils, Classes, FPImage, UniversalImage, NeuronImg, math, IniFiles;
+    cthreads, SysUtils, Classes, FPImage, UniversalImage, math, IniFiles, FeedForwardNet, vectorizeimage;
 
+type
+    TSampleImage = record
+        Image : TUniversalImage;
+        Name : AnsiString;
+        Verdict : Boolean;
+    end;
+    
 var
     Samples : array of TSampleImage;
-    NeuronWidth : Integer = 32;
-    NeuronHeight : Integer = 32;
+    InputImageWidth : Integer = 32;
+    InputImageHeight : Integer = 32;
 
 function CreateMirrorImage1(Image : TUniversalImage) : TUniversalImage;  
 var
@@ -51,10 +58,10 @@ procedure LoadSamples;
         image := TUniversalImage.CreateEmpty;
         image.LoadFromFile(FileName);
         {$IfDef FitSize}
-        if Image.Width < NeuronWidth then
-            NeuronWidth := Image.Width;
-        if Image.Height < NeuronHeight then
-            NeuronHeight := Image.Height;
+        if Image.Width < InputImageWidth then
+            InputImageWidth := Image.Width;
+        if Image.Height < InputImageHeight then
+            InputImageHeight := Image.Height;
         {$EndIf}
         c := Length(Samples);
         SetLength(Samples, c+4);
@@ -92,7 +99,7 @@ begin
         else if FileExists(s) then
             LoadSample(v, s);
     end;
-
+    Writeln('Found ', Length(Samples), ' samples.');
 end; 
 
 procedure FreeSamples;
@@ -105,47 +112,100 @@ begin
 end;
 
 var
-    Neuron : TNeuron;
+    net : TFeedForwardNet;
+    Samples2 : array of TDataVector;
+    Outputs2 : array of TDataVector;
     
 procedure SaveToIni(FileName : AnsiString = '~/.seedsorter/config.ini');
 var
     ConfigFile : TIniFile;
-    TablePath, ImgPath : AnsiString;
+    NetPath, ConfusionPath : AnsiString;
     FS : TFileStream;
     Img : TUniversalImage;
+    ts : TStringList;
 begin
     FileName := StringReplace(FileName, '~/', GetUserDir, []);
     ConfigFile := TIniFile.Create(FileName);
 
-    TablePath := ExtractFilePath(FileName) + 'Neuron.bin';
-    ImgPath := ExtractFilePath(FileName) + 'map.bmp';
-    ConfigFile.WriteString('Global', 'NeuronPath', TablePath);
+    NetPath := ExtractFilePath(FileName) + 'Net.bin';
+    ConfusionPath := ExtractFilePath(FileName) + 'confusion.html';
+    ConfigFile.WriteString('Global', 'NetPath', NetPath);
+    ConfigFile.WriteInteger('Global', 'InputImageWidth', InputImageWidth);
+    ConfigFile.WriteInteger('Global', 'InputImageHeight', InputImageHeight);
     ConfigFile.Free;
-    FS := TFileStream.Create(TablePath, fmCreate);
-    Neuron.SaveToStream(FS);
+    
+    FS := TFileStream.Create(NetPath, fmCreate);
+    net.SaveToStream(FS);
     FS.Free;
     
-    Img := Neuron.CreateMap;
-    Img.SaveToFile(ImgPath);
-    Img.Free;
+    ts := TStringList.Create;
+    ts.text := ConfusionMatrixToHtml(net.ConfusionMatrix(Samples2, Outputs2));
+    ts.SaveToFile(ConfusionPath);
+    ts.Free;
 end;
-   
+
+
+var
+    i, epoch : Integer;
+    v, vn : Double;
+    bestNet : TMemoryStream;
 begin    
+    Randomize;
     LoadSamples;
     
     {$IfDef FitSize}
-    Dec(NeuronWidth);
-    Dec(NeuronHeight);
+    Dec(InputImageWidth);
+    Dec(InputImageHeight);
     {$endif}
     
-    Writeln('Learning for size: ', NeuronWidth, 'x', NeuronHeight);
-    Neuron := TNeuron.Create(NeuronWidth, NeuronHeight);
-    //Neuron.AddRandomState;
-    Writeln(Neuron.Learn(Samples, 0.2, 3000, 0.97, True));
+    Writeln('Learning for size: ', InputImageWidth, 'x', InputImageHeight);
+
+    SetLength(Samples2, Length(Samples));
+    SetLength(Outputs2, Length(Samples));
+    for i := 0 to Length(Samples)-1 do
+    begin
+        Samples2[i] := Img2Vector(@Samples[i].Image.GetColorFromHelper, 0, 0, Samples[i].Image.Width-1, Samples[i].Image.Height-1, InputImageWidth, InputImageHeight);
+        Outputs2[i] := [ifthen(Samples[i].Verdict, 1, 0), ifthen(Samples[i].Verdict, 0, 1)];
+    end;
+    net := TFeedForwardNet.Create([InputImageWidth*InputImageHeight*3, 16, 2]);
+    net.RandomAboutOne;
+
+    i := 0;
+    epoch := 0;
+    v := 0;
+    bestNet := TMemoryStream.Create;
+    net.SaveToStream(bestNet);
+    repeat
+        net.AsyncStep(Samples2, Outputs2, 0.03, @net.LearnStep);
+        vn := net.CheckNetwork(Samples2, Outputs2, @SumOfRoundedDifferences);
+        if v < vn then
+        begin
+            i := 0;
+            v := vn;
+            bestNet.Free;
+            bestNet := TMemoryStream.Create;
+            net.SaveToStream(bestNet);
+        end;
+        Inc(i);
+        Inc(epoch);
+        writeln('Epoch: ', epoch, ', accuracy: ', vn:2:4);
+    until ((v > 0.95) and (i > 16)) or (epoch > 16384);
+    if v > vn then
+    begin
+        net.Free;
+        bestNet.Position := 0;
+        net := TFeedForwardNet.Create(bestNet);
+    end;
+    bestNet.Free;
+
+    Writeln;
+    writeln(AnsiString(net.GetDataDerivate([Samples2[0], Samples2[High(Samples)]], 1e-3)));
+    writeln(AnsiString(net.GetDataDerivate([Samples2[0], Samples2[High(Samples)]], 1e-6)));
+    writeln(AnsiString(net.GetDataDerivate([Samples2[0], Samples2[High(Samples)]], 1e-9)));
+
     SaveToIni();
-    
-    Neuron.Free;    
-    
+    net.Free;
+           
     FreeSamples;
     
     Writeln('Done');

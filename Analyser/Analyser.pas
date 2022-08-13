@@ -6,7 +6,7 @@ interface
 
 uses
   cThreads, SysUtils, Classes, Queues, Math, IniFiles, Locker,
-  FPImage, spidev, v4l1, YUV2Camera, NeuronImg;
+  FPImage, spidev, v4l1, YUV2Camera, FeedForwardNet, vectorizeimage;
 
 type
 
@@ -17,7 +17,8 @@ type
   TSeedAnalyser = class
   private
     FQueue: TQueueManager;
-    FNeuron : TNeuron;
+    FNet : TFeedForwardNet;
+    FInputImageWidth, FInputImageHeight : Integer;
   
     AnalisedCount : QWord;
     FrameCount : QWord;
@@ -76,8 +77,8 @@ end;
 
 function TSeedAnalyser.MarkFromCamera(const Rect: TDoubleRect): Boolean;
 begin
-  Inc(AnalisedCount);
-  Exit(FNeuron.AnaliseImageBin(@Camera.GetColor, Round(FWidth*Rect.Left), Round(FHeight*Rect.Top), Round(FWidth*Rect.Right), Round(FHeight*Rect.Bottom)));
+    Inc(AnalisedCount);
+    Exit(FNet.ProcessData(Img2Vector(@Camera.GetColor, Round(FWidth*Rect.Left), Round(FHeight*Rect.Top), Round(FWidth*Rect.Right), Round(FHeight*Rect.Bottom), FInputImageWidth, FInputImageHeight))[0]>=0.5);
 end;
 
 procedure TSeedAnalyser.Capture;
@@ -145,10 +146,12 @@ begin
   Camera := TYUV2Camera.Create(FWidth, FHeight, GetCameraDevice);
   Camera.Open;
   FQueue.AddMethod(@Capture);
+  
   FS := TFileStream.Create(ConfigFile.ReadString('Global', 'NeuronPath', '../config/Neuron.bin'), fmOpenRead);
-
-  FNeuron := TNeuron.Create(FS);
+  FNet := TFeedForwardNet.Create(FS);
   FS.Free;
+  FInputImageWidth := ConfigFile.ReadInteger('Global', 'InputImageWidth', 32);
+  FInputImageHeight := ConfigFile.ReadInteger('Global', 'InputImageHeight', 32);
   
   FAreaIndex := 0;
   FAreaCount := ConfigFile.ReadInteger('Global', 'DetectAreaCount', 0);
@@ -183,6 +186,7 @@ begin
   Camera.Free;
   FQueue.Free;
   AreaLocker.Free;
+  FNet.Free;
   inherited Destroy;
 end;
 

@@ -94,6 +94,7 @@ type
     function ExecuteMethod: boolean;
     procedure DequeueObject(obj: TObject); virtual;
     procedure AddMethod(const Method: TQueueMethod); virtual;
+    function LoadLevel : Double;
     procedure AddOrExecuteIfOveloaded(const Method: TQueueMethod);
     constructor Create(const ThreadsPerCore: integer = 1; const AdditionalThreads: integer = 0; const StackSizePerThread : PtrUInt = DefaultStackSize);
     destructor Destroy; override;
@@ -272,7 +273,7 @@ end;
 class function TObjectProcedureWithOneParameter.Convert(
   const proc: TStaticConstProcedure; const Parameter: TParameter): TQueueMethod;
 var
-  obj : TObjectProcedureWithOneParameter;
+  {%H-}obj : TObjectProcedureWithOneParameter;
 begin
   obj := TObjectProcedureWithOneParameter.Create(proc, Parameter);
   Result := @obj.Execute;
@@ -281,7 +282,7 @@ end;
 class function TObjectProcedureWithOneParameter.Convert(
   const proc: TStaticProcedure; const Parameter: TParameter): TQueueMethod;
 var
-  obj : TObjectProcedureWithOneParameter;
+  {%H-}obj : TObjectProcedureWithOneParameter;
 begin
   obj := TObjectProcedureWithOneParameter.Create(proc, Parameter);
   Result := @obj.Execute;
@@ -290,7 +291,7 @@ end;
 class function TObjectProcedureWithOneParameter.Convert(
   const proc: TObjectConstProcedure; const Parameter: TParameter): TQueueMethod;
 var
-  obj : TObjectProcedureWithOneParameter;
+  {%H-}obj : TObjectProcedureWithOneParameter;
 begin
   obj := TObjectProcedureWithOneParameter.Create(proc, Parameter);
   Result := @obj.Execute;
@@ -299,7 +300,7 @@ end;
 class function TObjectProcedureWithOneParameter.Convert(
   const proc: TObjectProcedure; const Parameter: TParameter): TQueueMethod;
 var
-  obj : TObjectProcedureWithOneParameter;
+  {%H-}obj : TObjectProcedureWithOneParameter;
 begin
   obj := TObjectProcedureWithOneParameter.Create(proc, Parameter);
   Result := @obj.Execute;
@@ -353,7 +354,7 @@ begin
             if (RaisedException as EQueueOverload).Retry then
               SecondMessage := ' and cannot avoid it';
         end;
-      Writeln('Exception in queue method: ' + RaisedException.Message + SecondMessage);
+      Writeln('An exception (' + RaisedException.ClassName +') in a queue method: ' + RaisedException.Message + SecondMessage);
     end;
 end;
 
@@ -470,6 +471,11 @@ begin
     Locker.Unlock;   
     FEvent.SetUp;
   end;
+end;
+
+function TQueueManager.LoadLevel: Double;
+begin
+  Exit(QueuedMethodCount / ThreadCount);
 end;
 
 procedure TQueueManager.AddOrExecuteIfOveloaded(const Method: TQueueMethod);

@@ -16,7 +16,6 @@ Service:
 	chmod u+x "Service/Service.sh"
 	chmod u+x "scripts/copyfiles.sh"
 	bash -i "scripts/copyfiles.sh"
-	#instantfpc -B -Mobjfpc -Sh -Si "Service/CreateService.pas" "-oCreateService" > "/dev/shm/seedsorter.service"
 	bash -i "Service/CreateService.sh" > "/dev/shm/seedsorter.service"
 	sudo mv "/dev/shm/seedsorter.service" "/etc/systemd/system/seedsorter.service"
 	
