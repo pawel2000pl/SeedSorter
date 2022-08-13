@@ -74,7 +74,7 @@ do
     sleep 0.05s
 done    
 
-sudo shutdown 0
+sudo systemctl poweroff
 
 while ( true ); do sleep 1s; done
 

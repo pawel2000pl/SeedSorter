@@ -4,8 +4,8 @@ program Demo;
 //{$Define FitSize}
 
 uses
-    cthreads, SysUtils, Classes, FPImage, UniversalImage, math, IniFiles, FeedForwardNet, vectorizeimage;
-
+    cthreads, SysUtils, Classes, FPImage, UniversalImage, math, IniFiles, FeedForwardNet, VectorizeImage;
+    
 type
     TSampleImage = record
         Image : TUniversalImage;

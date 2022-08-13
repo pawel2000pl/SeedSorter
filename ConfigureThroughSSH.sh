@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# DO NOT EXECUTE THIS SCRIP ON SEED SORTER MACHINA 
+# THIS SCRIPT IS A CLIENT OF THE SORTER
+
 DEVICES=`ip address show | cut -f 2 -d " " | cut -f 1 -d ":" | grep -P [0-9]+`
 DEVICE_COUNT=`echo $DEVICES | wc -w`
 

@@ -6,7 +6,7 @@ interface
 
 uses
   cThreads, SysUtils, Classes, Queues, Math, IniFiles, Locker,
-  FPImage, spidev, v4l1, YUV2Camera, FeedForwardNet, vectorizeimage;
+  FPImage, spidev, v4l1, YUV2Camera, FeedForwardNet, VectorizeImage;
 
 type
 
@@ -76,9 +76,12 @@ begin
 end;
 
 function TSeedAnalyser.MarkFromCamera(const Rect: TDoubleRect): Boolean;
+var
+    ProcessResults : TDataVector;
 begin
     Inc(AnalisedCount);
-    Exit(FNet.ProcessData(Img2Vector(@Camera.GetColor, Round(FWidth*Rect.Left), Round(FHeight*Rect.Top), Round(FWidth*Rect.Right), Round(FHeight*Rect.Bottom), FInputImageWidth, FInputImageHeight))[0]>=0.5);
+    ProcessResults := FNet.ProcessData(Img2Vector(@Camera.GetColor, Round(FWidth*Rect.Left), Round(FHeight*Rect.Top), Round(FWidth*Rect.Right), Round(FHeight*Rect.Bottom), FInputImageWidth, FInputImageHeight));
+    Exit(ProcessResults[0]>=ProcessResults[1]);
 end;
 
 procedure TSeedAnalyser.Capture;
