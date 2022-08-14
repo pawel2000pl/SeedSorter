@@ -121,7 +121,6 @@ var
     ConfigFile : TIniFile;
     NetPath, ConfusionPath : AnsiString;
     FS : TFileStream;
-    Img : TUniversalImage;
     ts : TStringList;
 begin
     FileName := StringReplace(FileName, '~/', GetUserDir, []);
@@ -149,6 +148,7 @@ var
     i, epoch : Integer;
     v, vn : Double;
     bestNet : TMemoryStream;
+    t : QWord;
 begin    
     Randomize;
     LoadSamples;
@@ -158,17 +158,21 @@ begin
     Dec(InputImageHeight);
     {$endif}
     
-    Writeln('Learning for size: ', InputImageWidth, 'x', InputImageHeight);
+    Writeln('Learning for size: ', InputImageWidth, 'x', InputImageHeight);    
+    net := TFeedForwardNet.Create([InputImageWidth*InputImageHeight*3, 16, 2]);
+    net.RandomAboutOne;
 
     SetLength(Samples2, Length(Samples));
     SetLength(Outputs2, Length(Samples));
+    t := GetTickCount64;
     for i := 0 to Length(Samples)-1 do
     begin
-        Samples2[i] := Img2Vector(@Samples[i].Image.GetColorFromHelper, 0, 0, Samples[i].Image.Width-1, Samples[i].Image.Height-1, InputImageWidth, InputImageHeight);
+        Samples2[i] := PrepareImage(Img2Vector(@Samples[i].Image.GetColorFromHelper, 0, 0, Samples[i].Image.Width-1, Samples[i].Image.Height-1, InputImageWidth, InputImageHeight), InputImageWidth, InputImageHeight);
+        net.ProcessData(Samples2[i]); //only for timing
         Outputs2[i] := [ifthen(Samples[i].Verdict, 1, 0), ifthen(Samples[i].Verdict, 0, 1)];
     end;
-    net := TFeedForwardNet.Create([InputImageWidth*InputImageHeight*3, 16, 2]);
-    net.RandomAboutOne;
+    t := GetTickCount64 - t;
+    Writeln('Prepared ', Length(Samples), ' samples in ', t, 'ms. Expected APS = ', 1000*Length(Samples)/t:2:4);
 
     i := 0;
     epoch := 0;
@@ -189,7 +193,7 @@ begin
         Inc(i);
         Inc(epoch);
         writeln('Epoch: ', epoch, ', accuracy: ', vn:2:4);
-    until ((v > 0.95) and (i > 16)) or (epoch > 16384);
+    until ((v > 0.96) and (i > 64)) or (epoch > 16384);
     if v > vn then
     begin
         net.Free;

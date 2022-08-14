@@ -80,7 +80,7 @@ var
     ProcessResults : TDataVector;
 begin
     Inc(AnalisedCount);
-    ProcessResults := FNet.ProcessData(Img2Vector(@Camera.GetColor, Round(FWidth*Rect.Left), Round(FHeight*Rect.Top), Round(FWidth*Rect.Right), Round(FHeight*Rect.Bottom), FInputImageWidth, FInputImageHeight));
+    ProcessResults := FNet.ProcessData(PrepareImage(Img2Vector(@Camera.GetColor, Round(FWidth*Rect.Left), Round(FHeight*Rect.Top), Round(FWidth*Rect.Right), Round(FHeight*Rect.Bottom), FInputImageWidth, FInputImageHeight), FInputImageWidth, FInputImageHeight));
     Exit(ProcessResults[0]>=ProcessResults[1]);
 end;
 
