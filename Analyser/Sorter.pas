@@ -21,7 +21,8 @@ var
     SeedAnalyser : TSeedAnalyser;
     time, newTime, fpc, apc : QWord;
     errorCount : QWord;
-    
+    // analises per second, overlays per second, frames per second
+    aps, ops, fps : Double;
 begin
     
     if FileExists(TerminateFile) then
@@ -41,11 +42,15 @@ begin
         newTime := GetTickCount64;
         if newTime - time >= 1000 then
         begin
-            apc := SeedAnalyser.GetAnalicysCount(True);
+            apc := SeedAnalyser.GetAnalysisCount(True);
             fpc := SeedAnalyser.GetFrameCount(True);
+            aps := 1000*apc/(newTime-time);
+            fps := 1000*fpc/(newTime-time);
+            ops := aps / SeedAnalyser.AreaCount;
             write(StdErr, '[', time, ']'#9);
-            Write(StdErr, 'APS=', 1000*apc/((newTime-time)*SeedAnalyser.AreaCount):2:2, #9);
-            Write(StdErr, 'FPS=', 1000*fpc/(newTime-time):2:2, #9);
+            Write(StdErr, 'APS=', aps:2:2, #9);
+            Write(StdErr, 'OPS=', ops:2:2, #9);
+            Write(StdErr, 'FPS=', fps:2:2, #9);
             writeln(StdErr);
             Flush(StdErr);
             time := newTime;

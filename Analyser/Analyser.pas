@@ -5,63 +5,67 @@ unit Analyser;
 interface
 
 uses
-  cThreads, SysUtils, Classes, Queues, Math, IniFiles, Locker,
+  cThreads, SysUtils, Classes, Queues, Math, IniFiles, Locker, 
   FPImage, spidev, v4l1, YUV2Camera, FeedForwardNet, VectorizeImage;
 
 type
 
-  TDoubleRect = record
-    Left, Top, Right, Bottom: double;
-  end;
+    TDoubleRect = record
+        Left, Top, Right, Bottom: double;
+    end;
 
-  TSeedAnalyser = class
-  private
-    FQueue: TQueueManager;
-    FNet : TFeedForwardNet;
-    FInputImageWidth, FInputImageHeight : Integer;
-  
-    AnalisedCount : QWord;
-    FrameCount : QWord;
-  
-    Camera: TYUV2Camera;
-    AreaLocker: TLocker;
-    FWidth, FHeight: integer;
-    FAreaIndex: integer;
-    FAreaCount: integer;
-    FAreas: array of TDoubleRect;
-    FAreaStatus: array of boolean;
-    function GetNextArea: integer;
-    procedure Capture;
-    procedure Analicys;
-    function MarkFromCamera(const Rect: TDoubleRect): Boolean; inline;
-  public
-    property AreaCount: integer read FAreaCount;
-    function GetAreaStatus(const Index: integer): boolean; inline;
-    function GetStatus: ansistring;
-    function GetAnalicysCount(const Reset : Boolean) : QWord;
-    function GetFrameCount(const Reset : Boolean) : QWord;
+    TSeedAnalyser = class
+    private
+        FQueue: TQueueManager;
+        FAnalysisThreads : Integer;
+        FNet : TFeedForwardNet;
+        FInputImageWidth, FInputImageHeight : Integer;
+        FNonResetingFrameCount : QWord;
+        FNonResetingAnalisedCount : QWord;
 
-    constructor Create(const ConfigFile: TIniFile);
-    constructor Create(const PathToConfigFile: ansistring = '../config/config.ini');
-    destructor Destroy; override;
-  end;
+        AnalisedCount : QWord;
+        FrameCount : QWord;
+
+        Camera: TYUV2Camera;
+        AreaLocker: TLocker;
+        FWidth, FHeight: integer;
+        FAreaIndex: integer;
+        FAreaCount: integer;
+        FAreas: array of TDoubleRect;
+        FAreaStatus: array of boolean;
+        procedure WaitForFrame;
+        function GetNextArea: integer;
+        procedure Capture;
+        procedure Analysis;
+        function MarkFromCamera(const Rect: TDoubleRect): Boolean; inline;
+    public
+        property AreaCount: integer read FAreaCount;
+        function GetAreaStatus(const Index: integer): boolean; inline;
+        function GetStatus: ansistring;
+        function GetAnalysisCount(const Reset : Boolean) : QWord;
+        function GetFrameCount(const Reset : Boolean) : QWord;
+
+        constructor Create(const ConfigFile: TIniFile);
+        constructor Create(const PathToConfigFile: ansistring = '../config/config.ini');
+        destructor Destroy; override;
+    end;
 
 implementation
 
 function GetCameraDevice: ansistring;
 var
-  i: integer;
+    i: integer;
 begin
-  for i := 0 to 9 do
-  begin
-    Result := '/dev/video' + IntToStr(i);
-    if FileExists(Result) then
-      exit;
-  end;
-  Result := '';
+    for i := 0 to 9 do
+    begin
+        Result := '/dev/video' + IntToStr(i);
+        if FileExists(Result) then
+        exit;
+    end;
+    Result := '';
 end;
 
-function TSeedAnalyser.GetAnalicysCount(const Reset : Boolean) : QWord;
+function TSeedAnalyser.GetAnalysisCount(const Reset : Boolean) : QWord;
 begin
     Result := AnalisedCount;
     if Reset then
@@ -79,118 +83,138 @@ function TSeedAnalyser.MarkFromCamera(const Rect: TDoubleRect): Boolean;
 var
     ProcessResults : TDataVector;
 begin
-    Inc(AnalisedCount);
+    InterlockedIncrement64(AnalisedCount);
     ProcessResults := FNet.ProcessData(PrepareImage(Img2Vector(@Camera.GetColor, Round(FWidth*Rect.Left), Round(FHeight*Rect.Top), Round(FWidth*Rect.Right), Round(FHeight*Rect.Bottom), FInputImageWidth, FInputImageHeight), FInputImageWidth, FInputImageHeight));
     Exit(ProcessResults[0]>=ProcessResults[1]);
 end;
 
 procedure TSeedAnalyser.Capture;
 begin
-  try
-  Camera.GetNextFrame;
-  Inc(FrameCount);
-  finally
-    FQueue.AddMethod(@Capture);
-  end;
+    try
+        Camera.GetNextFrame;
+        Inc(FNonResetingFrameCount);
+        InterlockedIncrement64(FrameCount);
+    finally
+        FQueue.AddMethod(@Capture);
+    end;
 end;
 
-procedure TSeedAnalyser.Analicys;
+procedure TSeedAnalyser.WaitForFrame;
 var
-  i, j: integer;
+    i : Integer;
 begin
-  try
-    for j := 0 to FAreaCount - 1 do
+    i := 0;
+    while (FNonResetingAnalisedCount > FAnalysisThreads * FNonResetingFrameCount) and (i<16) do
     begin
-      i := GetNextArea;
-      FAreaStatus[i] := MarkFromCamera(FAreas[i]);
+        sleep(1);
+        Inc(i);
     end;
-  finally
-    FQueue.AddMethod(@Analicys);
-  end;
+end;
+
+procedure TSeedAnalyser.Analysis;
+var
+    i, j: integer;
+begin
+    try
+        WaitForFrame;
+        for j := 0 to FAreaCount - 1 do
+        begin
+            i := GetNextArea;
+            FAreaStatus[i] := MarkFromCamera(FAreas[i]);
+        end;
+        InterlockedIncrement64(FNonResetingAnalisedCount);
+    finally
+        FQueue.AddMethod(@Analysis);
+    end;
 end;
 
 function TSeedAnalyser.GetNextArea: integer;
 begin
-  AreaLocker.Lock;
-  Result := FAreaIndex;
-  Inc(FAreaIndex);
-  if FAreaIndex >= FAreaCount then
-    FAreaIndex := 0;
-  AreaLocker.Unlock;
+    AreaLocker.Lock;
+    Result := FAreaIndex;
+    Inc(FAreaIndex);
+    if FAreaIndex >= FAreaCount then
+        FAreaIndex := 0;
+    AreaLocker.Unlock;
 end;
 
 function TSeedAnalyser.GetAreaStatus(const Index: integer): boolean;
 begin
-  Result := FAreaStatus[Index];
+    Result := FAreaStatus[Index];
 end;
 
 function TSeedAnalyser.GetStatus: ansistring;
 const
-  itc: array[0..1] of char = ('0', '1');
+    itc: array[0..1] of char = ('0', '1');
 var
-  i: integer;
+    i: integer;
 begin
-  Result := '';
-  for i := 0 to FAreaCount - 1 do
-    Result := Result + itc[ifthen(GetAreaStatus(i), 1, 0)];
+    Result := '';
+    for i := 0 to FAreaCount - 1 do
+        Result := Result + itc[ifthen(GetAreaStatus(i), 1, 0)];
 end;
 
 constructor TSeedAnalyser.Create(const ConfigFile: TIniFile);
 var
-  i: integer;
-  SectionName: ansistring;
-  FS : TFileStream;
+    i: integer;
+    SectionName: ansistring;
+    FS : TFileStream;
 begin
-  FQueue := TQueueManager.Create(1, 1);
-  FQueue.RemoveRepeated := False;
-  AreaLocker := TLocker.Create;
-  FWidth := ConfigFile.ReadInteger('Global', 'Width', 1920);
-  FHeight := ConfigFile.ReadInteger('Global', 'Height', 1080);
-  Camera := TYUV2Camera.Create(FWidth, FHeight, GetCameraDevice);
-  Camera.Open;
-  FQueue.AddMethod(@Capture);
-  
-  FS := TFileStream.Create(ConfigFile.ReadString('Global', 'NeuronPath', '../config/Neuron.bin'), fmOpenRead);
-  FNet := TFeedForwardNet.Create(FS);
-  FS.Free;
-  FInputImageWidth := ConfigFile.ReadInteger('Global', 'InputImageWidth', 32);
-  FInputImageHeight := ConfigFile.ReadInteger('Global', 'InputImageHeight', 32);
-  
-  FAreaIndex := 0;
-  FAreaCount := ConfigFile.ReadInteger('Global', 'DetectAreaCount', 0);
-  SetLength(FAreas, FAreaCount);
-  SetLength(FAreaStatus, FAreaCount);
-  for i := 0 to FAreaCount - 1 do
-  begin
-    SectionName := 'DetectArea' + IntToStr(i);
-    FAreas[i].Left := ConfigFile.ReadFloat(SectionName, 'Left', 0);
-    FAreas[i].Right := ConfigFile.ReadFloat(SectionName, 'Right', 0);
-    FAreas[i].Top := ConfigFile.ReadFloat(SectionName, 'Top', 0);
-    FAreas[i].Bottom := ConfigFile.ReadFloat(SectionName, 'Bottom', 0);
-  end;
-  for i := 0 to max(1, FQueue.CoreCount - 1) do
-    FQueue.AddMethod(@Analicys);
+    FNonResetingFrameCount := 0;
+    FNonResetingAnalisedCount := 0;
+    FrameCount := 0;
+    AnalisedCount := 0;
+    FQueue := TQueueManager.Create(1, 1);
+    FQueue.RemoveRepeated := False;
+    AreaLocker := TLocker.Create;
+    FWidth := ConfigFile.ReadInteger('Global', 'Width', 1920);
+    FHeight := ConfigFile.ReadInteger('Global', 'Height', 1080);
+    Camera := TYUV2Camera.Create(FWidth, FHeight, GetCameraDevice);
+    Camera.Open;
+    FQueue.AddMethod(@Capture);
+    
+    FS := TFileStream.Create(ConfigFile.ReadString('Global', 'NetPath', '../config/NetPath.bin'), fmOpenRead);
+    FNet := TFeedForwardNet.Create(FS);
+    FS.Free;
+    FInputImageWidth := ConfigFile.ReadInteger('Global', 'InputImageWidth', 32);
+    FInputImageHeight := ConfigFile.ReadInteger('Global', 'InputImageHeight', 32);
+    
+    FAreaIndex := 0;
+    FAreaCount := ConfigFile.ReadInteger('Global', 'DetectAreaCount', 0);
+    SetLength(FAreas, FAreaCount);
+    SetLength(FAreaStatus, FAreaCount);
+    for i := 0 to FAreaCount - 1 do
+    begin
+        SectionName := 'DetectArea' + IntToStr(i);
+        FAreas[i].Left := ConfigFile.ReadFloat(SectionName, 'Left', 0);
+        FAreas[i].Right := ConfigFile.ReadFloat(SectionName, 'Right', 0);
+        FAreas[i].Top := ConfigFile.ReadFloat(SectionName, 'Top', 0);
+        FAreas[i].Bottom := ConfigFile.ReadFloat(SectionName, 'Bottom', 0);
+    end;
+    FAnalysisThreads := max(2, FQueue.CoreCount);
+    for i := 0 to FAnalysisThreads-1 do
+        FQueue.AddMethod(@Analysis);
 end;
 
 constructor TSeedAnalyser.Create(const PathToConfigFile: ansistring);
 var
-  i: TIniFile;
+    i: TIniFile;
 begin
-  randomize;
-  i := TIniFile.Create(PathToConfigFile);
-  Create(i);
-  i.Free;
+    randomize;
+    i := TIniFile.Create(PathToConfigFile);
+    Create(i);
+    i.Free;
 end;
 
 destructor TSeedAnalyser.Destroy;
 begin
-  FQueue.Clear;
-  Camera.Close;
-  Camera.Free;
-  FQueue.Free;
-  AreaLocker.Free;
-  FNet.Free;
-  inherited Destroy;
+    FQueue.Clear;
+    Camera.Close;
+    Camera.Free;
+    FQueue.Free;
+    AreaLocker.Free;
+    FNet.Free;
+    inherited Destroy;
 end;
 
 end.
