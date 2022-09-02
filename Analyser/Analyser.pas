@@ -5,8 +5,8 @@ unit Analyser;
 interface
 
 uses
-  cThreads, SysUtils, Classes, Queues, Math, IniFiles, Locker, 
-  FPImage, spidev, v4l1, YUV2Camera, FeedForwardNet, VectorizeImage;
+    cThreads, SysUtils, Classes, Queues, Math, IniFiles, Locker, 
+    FPImage, spidev, v4l1, YUV2Camera, FeedForwardNet, VectorizeImage;
 
 type
 

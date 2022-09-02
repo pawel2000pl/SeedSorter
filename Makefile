@@ -4,7 +4,7 @@ Sorter:
 	fpc -O3 -OoAUTOINLINE -Mobjfpc -dUseCThreads -Sh -Si "Analyser/Sorter.pas" "-FuCamera/" "-Fuutils/" "-oSorter"
 	
 Learning: 
-	fpc -O3 -OoAUTOINLINE -Mobjfpc -Sh -Si "Learning/Learning.pas" "-Fuutils/" "-oLearning"
+	fpc -O3 -OoAUTOINLINE -Mobjfpc -dUseCThreads -Sh -Si "Learning/Learning.pas" "-Fuutils/" "-oLearning"
 	
 Configurator:
 	lazbuild "Configurator/SeedSorterConfigurator.lpr"	
@@ -15,12 +15,13 @@ GpioController:
 Service: 		
 	chmod u+x "Service/Service.sh"
 	chmod u+x "scripts/copyfiles.sh"
-	bash -i "scripts/copyfiles.sh"
-	bash -i "Service/CreateService.sh" > "/dev/shm/seedsorter.service"
+	chmod u+x "scripts/CreateService.sh"
+	bash "scripts/copyfiles.sh"
+	bash "Service/CreateService.sh" > "/dev/shm/seedsorter.service"
 	sudo mv "/dev/shm/seedsorter.service" "/etc/systemd/system/seedsorter.service"
 	
 RemoveService: 
-	rm "/etc/systemd/system/seedsorter.service"
+	rm -f "/etc/systemd/system/seedsorter.service"
 	
 configure:
 	./Configurator/SeedSorterConfigurator
@@ -33,12 +34,13 @@ Configurator/SeedSorterConfigurator: Configurator
 Analyser/Sorter: Sorter
 
 wash:
-	bash -i "./scripts/clean.sh" "Analyser"
-	bash -i "./scripts/clean.sh" "Learning"	
-	bash -i "./scripts/clean.sh" "Camera"	
-	bash -i "./scripts/clean.sh" "utils"
-	bash -i "./scripts/clean.sh" "Service"
-	bash -i "./scripts/clean.sh" "Gpio"
+	chmod u+x "scripts/clean.sh"
+	bash "./scripts/clean.sh" "Analyser"
+	bash "./scripts/clean.sh" "Learning"	
+	bash "./scripts/clean.sh" "Camera"	
+	bash "./scripts/clean.sh" "utils"
+	bash "./scripts/clean.sh" "Service"
+	bash "./scripts/clean.sh" "Gpio"
 	rm -rf "Configurator/lib"
 	rm -rf "Configurator/backup"
 
@@ -52,6 +54,6 @@ clear: clean
 	
 walkthrough:
 	chmod u+x "scripts/walkthrough.sh"
-	bash -i "./scripts/walkthrough.sh"
+	bash "./scripts/walkthrough.sh"
 	
 .PHONY: Learning Sorter Configurator clean clear learn configure GpioController Service RemoveService walkthrough wash
