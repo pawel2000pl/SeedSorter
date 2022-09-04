@@ -56,4 +56,9 @@ walkthrough:
 	chmod u+x "scripts/walkthrough.sh"
 	bash "./scripts/walkthrough.sh"
 	
-.PHONY: Learning Sorter Configurator clean clear learn configure GpioController Service RemoveService walkthrough wash
+install-dependences:
+	sudo apt update -y
+	sudo apt install -y libv4l-0 libv4l-dev fpc lazarus
+	
+.DEFAULT: all
+.PHONY: install-dependences Learning Sorter Configurator clean clear learn configure GpioController Service RemoveService walkthrough wash all
