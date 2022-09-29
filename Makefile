@@ -13,8 +13,6 @@ GpioController:
 	fpc -O3 -OoAUTOINLINE -Mobjfpc -dUseCThreads -Sh -Si "Gpio/GpioController.pas" "-Fuutils/" "-oGpioController"
 	
 Service: 	
-	bash -c 'mkdir -p "$$HOME/.seedsorter"'
-	bash -c 'ln -s "scripts/Service.sh" "$$HOME/.seedsorter/Service.sh"'
 	chmod u+x "scripts/Service.sh"
 	chmod u+x "scripts/copyfiles.sh"
 	chmod u+x "scripts/CreateService.sh"
