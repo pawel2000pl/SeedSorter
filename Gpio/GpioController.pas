@@ -30,7 +30,7 @@ begin
         s := s + chr;
     until chr in [#13, #10, #26, #3];
 
-    Result := not (chr in [#26, #3]);
+    Result := not EoF(Input);
 end;
 
 function ReadSameString(var s : AnsiString; const Count : Integer = 20) : Boolean;
@@ -165,7 +165,7 @@ begin
     while ReadSameString(Str) do
         if pos('0', Str) <= 0 then
             Break
-            else
+        else
             Writeln(StdErr, 'Error: not every area is detected');
     for i := 0 to Length(Electromagnets)-1 do
     begin

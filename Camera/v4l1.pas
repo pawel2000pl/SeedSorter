@@ -215,7 +215,7 @@ type
     procedure Sync;
 
     { get the pointer to the last sync'd frame }
-    function GetLastFrame: PByte;
+    function GetLastFrame: PByte; inline;
 
     { Capture, Sync and then return the Pointer to the new
       frame. This function will block until a new frame
@@ -416,7 +416,7 @@ begin
     raise Exception.Create('could not do VIDIOCSYNC');
 end;
 
-function TSimpleV4l1Device.GetLastFrame: PByte;
+function TSimpleV4l1Device.GetLastFrame: PByte; inline;
 begin
   Result := FBuf + FVideo_Mbuf.offsets[FFrameNum];
 end;

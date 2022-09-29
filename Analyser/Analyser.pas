@@ -33,14 +33,16 @@ type
         FAreaCount: integer;
         FAreas: array of TDoubleRect;
         FAreaStatus: array of boolean;
+        FAreaValue: array of Double;
         procedure WaitForFrame;
         function GetNextArea: integer;
         procedure Capture;
         procedure Analysis;
-        function MarkFromCamera(const Rect: TDoubleRect): Boolean; inline;
+        function MarkFromCamera(const Rect: TDoubleRect): Double; inline;
     public
         property AreaCount: integer read FAreaCount;
         function GetAreaStatus(const Index: integer): boolean; inline;
+        function GetAreaValue(const Index: integer): Double; inline;
         function GetStatus: ansistring;
         function GetAnalysisCount(const Reset : Boolean) : QWord;
         function GetFrameCount(const Reset : Boolean) : QWord;
@@ -79,13 +81,13 @@ begin
         FrameCount := 0;
 end;
 
-function TSeedAnalyser.MarkFromCamera(const Rect: TDoubleRect): Boolean;
+function TSeedAnalyser.MarkFromCamera(const Rect: TDoubleRect): Double;
 var
     ProcessResults : TDataVector;
 begin
     InterlockedIncrement64(AnalisedCount);
     ProcessResults := FNet.ProcessData(PrepareImage(Img2Vector(@Camera.GetColor, Round(FWidth*Rect.Left), Round(FHeight*Rect.Top), Round(FWidth*Rect.Right), Round(FHeight*Rect.Bottom), FInputImageWidth, FInputImageHeight), FInputImageWidth, FInputImageHeight));
-    Exit(ProcessResults[0]>=ProcessResults[1]);
+    Exit(ProcessResults[0]-ProcessResults[1]);
 end;
 
 procedure TSeedAnalyser.Capture;
@@ -120,7 +122,8 @@ begin
         for j := 0 to FAreaCount - 1 do
         begin
             i := GetNextArea;
-            FAreaStatus[i] := MarkFromCamera(FAreas[i]);
+            FAreaValue[i] := MarkFromCamera(FAreas[i]);
+            FAreaStatus[i] := FAreaValue[i] > 0;
         end;
         InterlockedIncrement64(FNonResetingAnalisedCount);
     finally
@@ -136,6 +139,11 @@ begin
     if FAreaIndex >= FAreaCount then
         FAreaIndex := 0;
     AreaLocker.Unlock;
+end;
+
+function TSeedAnalyser.GetAreaValue(const Index: integer): Double;
+begin
+    Result := FAreaValue[Index];
 end;
 
 function TSeedAnalyser.GetAreaStatus(const Index: integer): boolean;
@@ -183,6 +191,7 @@ begin
     FAreaCount := ConfigFile.ReadInteger('Global', 'DetectAreaCount', 0);
     SetLength(FAreas, FAreaCount);
     SetLength(FAreaStatus, FAreaCount);
+    SetLength(FAreaValue, FAreaCount);
     for i := 0 to FAreaCount - 1 do
     begin
         SectionName := 'DetectArea' + IntToStr(i);

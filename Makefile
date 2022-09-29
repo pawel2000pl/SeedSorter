@@ -12,13 +12,16 @@ Configurator:
 GpioController:
 	fpc -O3 -OoAUTOINLINE -Mobjfpc -dUseCThreads -Sh -Si "Gpio/GpioController.pas" "-Fuutils/" "-oGpioController"
 	
-Service: 		
-	chmod u+x "Service/Service.sh"
+Service: 	
+	bash -c 'mkdir -p "$$HOME/.seedsorter"'
+	bash -c 'ln -s "scripts/Service.sh" "$$HOME/.seedsorter/Service.sh"'
+	chmod u+x "scripts/Service.sh"
 	chmod u+x "scripts/copyfiles.sh"
 	chmod u+x "scripts/CreateService.sh"
 	bash "scripts/copyfiles.sh"
-	bash "Service/CreateService.sh" > "/dev/shm/seedsorter.service"
+	bash "scripts/CreateService.sh" > "/dev/shm/seedsorter.service"
 	sudo mv "/dev/shm/seedsorter.service" "/etc/systemd/system/seedsorter.service"
+	sudo systemctl enable seedsorter
 	
 RemoveService: 
 	rm -f "/etc/systemd/system/seedsorter.service"
