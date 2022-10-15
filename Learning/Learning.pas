@@ -6,11 +6,10 @@ uses
     cthreads, SysUtils, Classes, UniversalImage, math, IniFiles, FeedForwardNet, VectorizeImage, SampleLoader, Teacher;
 
 var
-    net : TFeedForwardNet;
     VectorSamples : array of TDataVector;
     VectorOutputs : array of TDataVector;
     
-procedure SaveToIni(FileName : AnsiString = '~/.seedsorter/config.ini');
+procedure SaveToIni(net: TFeedForwardNet; FileName : AnsiString = '~/.seedsorter/config.ini');
 var
     ConfigFile : TIniFile;
     NetPath, ConfusionPath : AnsiString;
@@ -37,10 +36,26 @@ begin
     ts.Free;
 end;
 
+function LearnNet(P: Pointer) : PtrInt;
+var
+    net : TFeedForwardNet;
+begin
+    net := TFeedForwardNet(P);
+    net.RandomAboutOne;
+    TeachNet(net, VectorSamples, VectorOutputs, 0.03, 0.3);
+    Exit(0);
+end;
+
+const 
+  LearningThreadCount = 16;
 
 var
     i : Integer;
     t : QWord;
+    net : TFeedForwardNet;
+    nets : array[0..LearningThreadCount-1] of TFeedForwardNet;
+    learningThreads : array[0..LearningThreadCount-1] of TThreadID;
+    BestValue, CurrentValue : Double;
 begin    
     Randomize;
     Samples := [];
@@ -61,18 +76,45 @@ begin
     end;
     t := GetTickCount64 - t;
     Writeln('Prepared ', Length(Samples), ' samples in ', t, 'ms. Expected PPS = ', 1000*Length(Samples)/t:2:4, ' (per thread)');
+    net.Free;
 
-    TeachNet(net, VectorSamples, VectorOutputs, 0.03, 0.3);
+    for i := 0 to LearningThreadCount-1 do
+    begin
+        nets[i] := TFeedForwardNet.Create([InputImageWidth*InputImageHeight*3, 16, 9, 2]);
+        sleep(100);
+        random();
+        learningThreads[i] := BeginThread(@LearnNet, Pointer(nets[i]));
+    end;
+
+    for i := 0 to LearningThreadCount-1 do
+      WaitForThreadTerminate(learningThreads[i], High(LongInt));
+
+    BestValue := 1e30;    
+    for i := 0 to LearningThreadCount-1 do 
+    begin
+        CurrentValue := nets[i].GetDataDerivate([VectorSamples[0], VectorSamples[High(Samples)]], 1e-3).squaredMean;
+        CurrentValue := CurrentValue + 1.0/(1.0+CurrentValue);
+        CurrentValue += 3.0*(1.0-nets[i].CheckNetwork(VectorSamples, VectorOutputs, @SumOfRoundedDifferences));
+        if CurrentValue < BestValue then
+        begin
+            BestValue := CurrentValue;
+            net := nets[i];
+        end;        
+    end;
+
+    SaveToIni(net); 
 
     Writeln;
     writeln(AnsiString(net.GetDataDerivate([VectorSamples[0], VectorSamples[High(Samples)]], 1e-3)));
     writeln(AnsiString(net.GetDataDerivate([VectorSamples[0], VectorSamples[High(Samples)]], 1e-6)));
     writeln(AnsiString(net.GetDataDerivate([VectorSamples[0], VectorSamples[High(Samples)]], 1e-9)));
+    writeln;
+    writeln('Accuracy');
+    writeln(net.CheckNetwork(VectorSamples, VectorOutputs, @SumOfRoundedDifferences):2:4);
 
-    SaveToIni();
-    net.Free;
-           
     FreeSamples;
+    for i := 0 to LearningThreadCount-1 do
+        nets[i].Free;  
     
     Writeln('Done');
 end.

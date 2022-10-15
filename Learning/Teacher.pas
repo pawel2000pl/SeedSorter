@@ -14,6 +14,9 @@ implementation
 uses
     Classes, math;
 
+var 
+  RunId : QWord = 0;
+
 procedure TeachNet(net : TFeedForwardNet; const VectorSamples, VectorOutputs : array of TDataVector; const Quickness, TestFraction : Double);
 const
     MaxEpoch = 16384;
@@ -29,9 +32,12 @@ var
 
     LearningGrade, TestGrade : Double;
     LearningBestGrade, TestBestGrade : Double;
+
+    MyRunId : QWord;
 begin
     Assert(Length(VectorSamples) = Length(VectorOutputs));
     Count := Length(VectorSamples);
+    MyRunId := InterlockedIncrement64(RunId);
 
     DivisionVector := [];
     SetLength(DivisionVector, Count);
@@ -90,7 +96,7 @@ begin
             TestBestGrade := TestGrade;
         end;
 
-        writeln('Epoch: ', epoch, ', learning accuracy: ', LearningGrade:2:4, ', test accuracy: ', TestGrade:2:4);
+        writeln('[', MyRunId:2, '] ', 'Epoch: ', epoch, ', learning accuracy: ', LearningGrade:2:4, ', test accuracy: ', TestGrade:2:4);
         Inc(epoch);
     until (epoch - lastBetterEpoch > MaxIdleEpoch) or (epoch > MaxEpoch);
 
@@ -98,6 +104,7 @@ begin
     net.LoadFromStream(bestNet);    
 
     bestNet.Free;
+    writeln('Run ', MyRunId, ': done.');
 end;
 
 end.
