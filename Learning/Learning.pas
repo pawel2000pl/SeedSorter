@@ -80,7 +80,7 @@ begin
 
     for i := 0 to LearningThreadCount-1 do
     begin
-        nets[i] := TFeedForwardNet.Create([InputImageWidth*InputImageHeight*3, 16, 9, 2]);
+        nets[i] := TFeedForwardNet.Create([InputImageWidth*InputImageHeight*3, 6, 2]);
         sleep(100);
         random();
         learningThreads[i] := BeginThread(@LearnNet, Pointer(nets[i]));

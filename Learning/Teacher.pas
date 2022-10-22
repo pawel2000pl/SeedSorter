@@ -96,8 +96,9 @@ begin
             TestBestGrade := TestGrade;
         end;
 
-        writeln('[', MyRunId:2, '] ', 'Epoch: ', epoch, ', learning accuracy: ', LearningGrade:2:4, ', test accuracy: ', TestGrade:2:4);
-        Inc(epoch);
+        writeln('[', MyRunId:2, '] ', 'Epoch: ', epoch, ', learning accuracy: ', LearningGrade:2:4, ', test accuracy: ', TestGrade:2:4);        
+        Flush(StdOut);
+        Inc(epoch);        
     until (epoch - lastBetterEpoch > MaxIdleEpoch) or (epoch > MaxEpoch);
 
     bestNet.Position := 0;
@@ -105,6 +106,7 @@ begin
 
     bestNet.Free;
     writeln('Run ', MyRunId, ': done.');
+    Flush(StdOut);
 end;
 
 end.

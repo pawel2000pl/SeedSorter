@@ -252,6 +252,9 @@ begin
         Writeln(StdErr, 'Working');
         Hello(100);
         
+        Flush(StdOut);
+        Flush(StdErr);
+        
         while ProcessInput do;
 
         Hello(50);

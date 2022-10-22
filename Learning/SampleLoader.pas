@@ -16,7 +16,7 @@ type
 
 var
     Samples : array of TSampleImage;
-    InputImageWidth : Integer = 32;
+    InputImageWidth : Integer = 24;
     InputImageHeight : Integer = 32;
 
 procedure LoadSamples;
