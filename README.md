@@ -21,7 +21,6 @@ Software sends square signal (17Hz) on gpio pin when seed for rejection is in a 
 Photo-galery
 
 ![Photo](Photos/consoles2.png)
-![Photo](Photos/lxtask.png)
 
 ![Photo](Photos/20211218_134026.jpg)
 ![Photo](Photos/20211218_134041.jpg)
