@@ -18,6 +18,12 @@ type
     function GetColorFromHelper(const x, y : Integer) : TFPColor;
   end;
 
+  TGradientSupressor = array[0..3, 0..2] of Double;
+  PGradientSupressor = ^TGradientSupressor;
+
+const DefaultDestValueOfPrepareImage = 0.93;
+const DefaultSupressorResistanceOfPrepareImage = 120;
+
   function Img2Vector(const fun : TColorFunction; const left, top, right, bottom, DestWidth, DestHeight : Integer) : TDoubleArray;
   procedure NormalizeVector(var v : TDoubleArray);
   function RetNormalizeVector(const v : TDoubleArray) : TDoubleArray;
@@ -25,53 +31,53 @@ type
   procedure NormalizeVectorRGB(var v : TDoubleArray);
   function RetNormalizeVector01(const v : TDoubleArray) : TDoubleArray;
   procedure Vector2Img(const Vector : TDoubleArray; const Width, Height : Integer; Image : TFPCustomImage);
-  function PrepareImage(const ImageAsVector : TDoubleArray; const Width, Height : Integer; const DestValue : Double = 0.93) : TDoubleArray;
+  function PrepareImage(const ImageAsVector : TDoubleArray; const Width, Height : Integer; const DestValue : Double = DefaultDestValueOfPrepareImage; const Supressor: PGradientSupressor = nil; const SupressorResistance: Double = DefaultSupressorResistanceOfPrepareImage) : TDoubleArray;
   procedure AddToVector(var Vector : TDoubleArray; const value : Double);
 
 implementation
 
-function PrepareImage(const ImageAsVector : TDoubleArray; const Width, Height : Integer; const DestValue : Double) : TDoubleArray;
+function PrepareImage(const ImageAsVector : TDoubleArray; const Width, Height : Integer; const DestValue : Double; const Supressor: PGradientSupressor; const SupressorResistance: Double) : TDoubleArray;
 const
     CornerOrder : array[0..3, 0..1] of Integer = ((0, 0), (1, 0), (0, 1), (1, 1));
 var
-    ScaleR, ScaleG, ScaleB, d : Double;
-    x, y, i, offset : Integer;
-    CornerColorsR, CornerColorsG, CornerColorsB : array[0..3] of Double;
-    CornerColorAver : array[0..2] of Double;
+    d : Double;
+    Scale : array[0..2] of Double;
+    x, y, i, j, offset : Integer;
+    CornerColors : array[0..3, 0..2] of Double;
 begin
     Result := [];
     SetLength(Result, Width*Height*3);
 
-    CornerColorAver[0] := 0; 
-    CornerColorAver[1] := 0; 
-    CornerColorAver[2] := 0;
     for i := 0 to 3 do
     begin    
         offset := 3*(CornerOrder[i, 1]*(Height-1) * Width + CornerOrder[i, 0]*(Width-1));
-        CornerColorsR[i] := ImageAsVector[offset]; 
-        CornerColorsG[i] := ImageAsVector[offset+1];
-        CornerColorsB[i] := ImageAsVector[offset+2];
-        CornerColorAver[0] += CornerColorsR[i]/3; 
-        CornerColorAver[1] += CornerColorsG[i]/3; 
-        CornerColorAver[2] += CornerColorsB[i]/3; 
+        for j := 0 to 2 do
+          CornerColors[i, j] := ImageAsVector[offset+j];
     end;    
+
+    if Supressor <> nil then
+      for i := 0 to 3 do
+        for j := 0 to 2 do
+        begin
+          Supressor^[i, j] += (CornerColors[i, j]-Supressor^[i, j])/SupressorResistance;
+          CornerColors[i, j] := Supressor^[i, j];
+        end;
         
     for x := 0 to Width-1 do
         for y := 0 to Height-1 do
         begin
-            ScaleR := 0; ScaleG := 0; ScaleB := 0;
+            for j := 0 to 2 do
+              Scale[j] := 0;
             for i := 0 to 3 do
             begin    
                 d := (x/(Width-1)*CornerOrder[i, 0] + (1-x/(Width-1))*(1-CornerOrder[i, 0])) * 
                      (y/(Height-1)*CornerOrder[i, 1] + (1-y/(Height-1))*(1-CornerOrder[i, 1]));
-                ScaleR += 1/(CornerColorsR[i]+1e-5) * DestValue * d;
-                ScaleG += 1/(CornerColorsG[i]+1e-5) * DestValue * d;
-                ScaleB += 1/(CornerColorsB[i]+1e-5) * DestValue * d;
+                for j := 0 to 2 do
+                  Scale[j] += 1/(CornerColors[i, j]+1e-5) * DestValue * d;
             end; 
             offset := 3*(y * Width + x);
-            Result[offset] := EnsureRange(ImageAsVector[offset]*ScaleR, 0, 1);
-            Result[offset+1] := EnsureRange(ImageAsVector[offset+1]*ScaleG, 0, 1);
-            Result[offset+2] := EnsureRange(ImageAsVector[offset+2]*ScaleB, 0, 1);
+            for j := 0 to 2 do
+              Result[offset+j] := EnsureRange(ImageAsVector[offset]*Scale[j], 0, 1);
         end;
 end;
 

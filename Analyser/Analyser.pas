@@ -34,11 +34,12 @@ type
         FAreas: array of TDoubleRect;
         FAreaStatus: array of boolean;
         FAreaValue: array of Double;
+        FGradientSupressors: array of TGradientSupressor;
         procedure WaitForFrame;
         function GetNextArea: integer;
         procedure Capture;
         procedure Analysis;
-        function MarkFromCamera(const Rect: TDoubleRect): Double; inline;
+        function MarkFromCamera(const Rect: TDoubleRect; const Supressor: PGradientSupressor = nil): Double; inline;
     public
         property AreaCount: integer read FAreaCount;
         function GetAreaStatus(const Index: integer): boolean; inline;
@@ -81,12 +82,12 @@ begin
         FrameCount := 0;
 end;
 
-function TSeedAnalyser.MarkFromCamera(const Rect: TDoubleRect): Double;
+function TSeedAnalyser.MarkFromCamera(const Rect: TDoubleRect; const Supressor: PGradientSupressor): Double;
 var
     ProcessResults : TDataVector;
 begin
     InterlockedIncrement64(AnalisedCount);
-    ProcessResults := FNet.ProcessData(PrepareImage(Img2Vector(@Camera.GetColor, Round(FWidth*Rect.Left), Round(FHeight*Rect.Top), Round(FWidth*Rect.Right), Round(FHeight*Rect.Bottom), FInputImageWidth, FInputImageHeight), FInputImageWidth, FInputImageHeight));
+    ProcessResults := FNet.ProcessData(PrepareImage(Img2Vector(@Camera.GetColor, Round(FWidth*Rect.Left), Round(FHeight*Rect.Top), Round(FWidth*Rect.Right), Round(FHeight*Rect.Bottom), FInputImageWidth, FInputImageHeight), FInputImageWidth, FInputImageHeight, DefaultDestValueOfPrepareImage, Supressor, DefaultSupressorResistanceOfPrepareImage));
     Exit(ProcessResults[0]-ProcessResults[1]);
 end;
 
@@ -122,7 +123,7 @@ begin
         for j := 0 to FAreaCount - 1 do
         begin
             i := GetNextArea;
-            FAreaValue[i] := MarkFromCamera(FAreas[i]);
+            FAreaValue[i] := MarkFromCamera(FAreas[i], @FGradientSupressors[i]);
             FAreaStatus[i] := FAreaValue[i] > 0;
         end;
         InterlockedIncrement64(FNonResetingAnalisedCount);
@@ -192,6 +193,7 @@ begin
     SetLength(FAreas, FAreaCount);
     SetLength(FAreaStatus, FAreaCount);
     SetLength(FAreaValue, FAreaCount);
+    SetLength(FGradientSupressors, FAreaCount);
     for i := 0 to FAreaCount - 1 do
     begin
         SectionName := 'DetectArea' + IntToStr(i);
