@@ -22,7 +22,7 @@ type
   PGradientSupressor = ^TGradientSupressor;
 
 const DefaultDestValueOfPrepareImage = 0.93;
-const DefaultSupressorResistanceOfPrepareImage = 120;
+const DefaultSupressorTimePeriodOfPrepareImage = 120;
 
   function Img2Vector(const fun : TColorFunction; const left, top, right, bottom, DestWidth, DestHeight : Integer) : TDoubleArray;
   procedure NormalizeVector(var v : TDoubleArray);
@@ -31,12 +31,12 @@ const DefaultSupressorResistanceOfPrepareImage = 120;
   procedure NormalizeVectorRGB(var v : TDoubleArray);
   function RetNormalizeVector01(const v : TDoubleArray) : TDoubleArray;
   procedure Vector2Img(const Vector : TDoubleArray; const Width, Height : Integer; Image : TFPCustomImage);
-  function PrepareImage(const ImageAsVector : TDoubleArray; const Width, Height : Integer; const DestValue : Double = DefaultDestValueOfPrepareImage; const Supressor: PGradientSupressor = nil; const SupressorResistance: Double = DefaultSupressorResistanceOfPrepareImage) : TDoubleArray;
+  function PrepareImage(const ImageAsVector : TDoubleArray; const Width, Height : Integer; const DestValue : Double = DefaultDestValueOfPrepareImage; const Supressor: PGradientSupressor = nil; const SupressorTimePeriod: Double = DefaultSupressorTimePeriodOfPrepareImage) : TDoubleArray;
   procedure AddToVector(var Vector : TDoubleArray; const value : Double);
 
 implementation
 
-function PrepareImage(const ImageAsVector : TDoubleArray; const Width, Height : Integer; const DestValue : Double; const Supressor: PGradientSupressor; const SupressorResistance: Double) : TDoubleArray;
+function PrepareImage(const ImageAsVector : TDoubleArray; const Width, Height : Integer; const DestValue : Double; const Supressor: PGradientSupressor; const SupressorTimePeriod: Double) : TDoubleArray;
 const
     CornerOrder : array[0..3, 0..1] of Integer = ((0, 0), (1, 0), (0, 1), (1, 1));
 var
@@ -59,7 +59,7 @@ begin
       for i := 0 to 3 do
         for j := 0 to 2 do
         begin
-          Supressor^[i, j] += (CornerColors[i, j]-Supressor^[i, j])/SupressorResistance;
+          Supressor^[i, j] += (CornerColors[i, j]-Supressor^[i, j])/SupressorTimePeriod;
           CornerColors[i, j] := Supressor^[i, j];
         end;
         
