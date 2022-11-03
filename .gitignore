@@ -9,7 +9,4 @@
 *.txt
 *backup*
 *lib*
-Analyser/Sorter
-Learning/Learning
-Configurator/SeedSorterConfigurator
-Gpio/GpioController
+*.bin
