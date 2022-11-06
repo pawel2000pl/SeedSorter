@@ -4,6 +4,12 @@ unit v4l1;
 
 interface
 
+uses
+  dynlibs;
+
+const
+  V4L1_Library = 'libv4l1.so';
+
 const
   // these are used in the TVideo_Capability record
   VID_TYPE_CAPTURE = 1 ; { Can capture }
@@ -251,20 +257,28 @@ type
   format conversion from all known v2 formats will be automatically done
   transparently on the fly into either RGB24 (BGR) or YUV240p. Every
   V4l2 cam will appear as a V4l1 cam capable of 24 bit uncompressed BGR}
-function v4l1_open (filname: PChar; oflag: Integer): Integer;
-  cdecl;external 'libv4l1.so';
-function v4l1_close(fd: Integer): Integer;
-  cdecl; external 'libv4l1.so';
-function v4l1_ioctl(fd: Integer; request: Cardinal; data: Pointer): Integer;
-  cdecl; external 'libv4l1.so';
-function v4l1_read(fd: Integer; buffer: Pointer; n: Integer): Integer;
-  cdecl; external 'libv4l1.so';
-function v4l1_mmap(start: Pointer; length: Integer; prot: Integer;
-  flags: Integer; fd: Integer; offset: Int64): Pointer;
-  cdecl; external 'libv4l1.so';
-function v4l1_munmap(start: Pointer; length: Integer): Integer;
-  cdecl; external 'libv4l1.so';
 
+type
+
+  Tv4l1_open = function(filname: PChar; oflag: Integer): Integer; cdecl;
+  Tv4l1_close = function(fd: Integer): Integer; cdecl;
+  Tv4l1_ioctl = function(fd: Integer; request: Cardinal; data: Pointer): Integer; cdecl;
+  Tv4l1_read = function(fd: Integer; buffer: Pointer; n: Integer): Integer; cdecl;
+  Tv4l1_mmap = function(start: Pointer; length: Integer; prot: Integer; flags: Integer; fd: Integer; offset: Int64): Pointer; cdecl;
+  Tv4l1_munmap = function(start: Pointer; length: Integer): Integer; cdecl;
+
+var
+  V4L1Handle: TLibHandle = -1;
+
+  v4l1_open: Tv4l1_open;
+  v4l1_close: Tv4l1_close;
+  v4l1_ioctl: Tv4l1_ioctl;
+  v4l1_read: Tv4l1_read;
+  v4l1_mmap: Tv4l1_mmap;
+  v4l1_munmap: Tv4l1_munmap;
+
+procedure InitV4L1();
+procedure FinitV4L1();
 
 // the functions below are only for debugging purposes,
 // to print the contents of some records to the console.
@@ -546,5 +560,37 @@ begin
   writeln(StdErr, '       clipcount: ' + IntToStr(win.clipcount));
   writeln(StdErr);
 end;
+
+procedure InitV4L1();
+begin
+  if V4L1Handle <> -1 then
+    Exit;
+  V4L1Handle := LoadLibrary(V4L1_Library);
+  v4l1_open := Tv4l1_open(GetProcedureAddress(V4L1Handle, 'v4l1_open'));
+  v4l1_close := Tv4l1_close(GetProcedureAddress(V4L1Handle, 'v4l1_close'));
+  v4l1_ioctl := Tv4l1_ioctl(GetProcedureAddress(V4L1Handle, 'v4l1_ioctl'));
+  v4l1_read := Tv4l1_read(GetProcedureAddress(V4L1Handle, 'v4l1_read'));
+  v4l1_mmap := Tv4l1_mmap(GetProcedureAddress(V4L1Handle, 'v4l1_mmap'));
+  v4l1_munmap := Tv4l1_munmap(GetProcedureAddress(V4L1Handle, 'v4l1_munmap'));
+end;
+
+procedure FinitV4L1();
+begin
+  if V4L1Handle = -1 then
+    Exit;
+  FreeLibrary(V4L1Handle);
+  V4L1Handle := -1;
+  v4l1_open := nil;
+  v4l1_close := nil;
+  v4l1_ioctl := nil;
+  v4l1_mmap := nil;
+  v4l1_munmap := nil;
+end;
+
+initialization 
+  InitV4L1();
+
+finalization
+  FinitV4L1();
 
 end.

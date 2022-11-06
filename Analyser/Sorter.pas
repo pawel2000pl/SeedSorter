@@ -3,7 +3,7 @@ program Sorter;
 {$Mode ObjFpc}
 
 uses
-    cThreads, SysUtils, Analyser, BaseUnix, Unix;
+    cThreads, SysUtils, Analyser, BaseUnix, Unix, v4l1;
 
 const 
     TerminateFile = '/dev/shm/TerminateSeedSorter';
@@ -13,8 +13,32 @@ function FreeAnalyser(p : Pointer) : PtrInt;
 begin
     (TObject(p^) as TSeedAnalyser).Free;
     TObject(p^) := nil;
-    writeln(StdErr, 'Seed analiser disposed');
+    writeln(StdErr, 'Seed analiser has been disposed');
     Exit(0);
+end;
+
+function FreeV4L1(p : Pointer) : PtrInt;
+begin
+    v4l1.FinitV4L1();
+    writeln(StdErr, 'V4L1 has been unloaded');
+    boolean(p^) := True;
+    Exit(0);
+end;
+
+procedure EmergencyRestart();
+var
+  finished: Boolean;
+  time : QWord;
+begin
+  finished := False;
+  time := GetTickCount64;
+  BeginThread(@FreeV4L1, @finished);
+  while (GetTickCount64 - time < 1000) and (not finished) do sleep(1);
+
+  Writeln(StdErr, 'Restart at: ', GetTickCount64);
+  Flush(StdOut);
+  Flush(StdErr);
+  FpExecV(ParamStr(0), nil);  
 end;
     
 var
@@ -67,14 +91,9 @@ begin
     time := GetTickCount64;
     BeginThread(@FreeAnalyser, @SeedAnalyser);
     while (GetTickCount64 - time < 1000) and (SeedAnalyser <> nil) do sleep(1);
-
+    
     if errorCount >= MaxErrorCount then
-    begin
-        Writeln(StdErr, 'Restart at: ', GetTickCount64);
-        Flush(StdOut);
-        Flush(StdErr);
-        FpExecV(ParamStr(0), nil);           
-    end;
+      EmergencyRestart();
     
     if FileExists(TerminateFile) then
         DeleteFile(TerminateFile);    
