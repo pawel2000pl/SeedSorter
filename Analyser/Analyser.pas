@@ -1,6 +1,7 @@
 unit Analyser;
 
 {$Mode ObjFpc}
+{$I defines.inc}
 
 interface
 
@@ -34,12 +35,14 @@ type
         FAreas: array of TDoubleRect;
         FAreaStatus: array of boolean;
         FAreaValue: array of Double;
+        {$ifdef PREPARING_IMAGE}
         FGradientSupressors: array of TGradientSupressor;
+        {$endif}
         procedure WaitForFrame;
         function GetNextArea: integer;
         procedure Capture;
         procedure Analysis;
-        function MarkFromCamera(const Rect: TDoubleRect; const Supressor: PGradientSupressor = nil): Double; inline;
+        function MarkFromCamera(const Rect: TDoubleRect{$ifdef PREPARING_IMAGE}; const Supressor: PGradientSupressor = nil{$endif}): Double; inline;
     public
         property AreaCount: integer read FAreaCount;
         function GetAreaStatus(const Index: integer): boolean; inline;
@@ -82,12 +85,16 @@ begin
         FrameCount := 0;
 end;
 
-function TSeedAnalyser.MarkFromCamera(const Rect: TDoubleRect; const Supressor: PGradientSupressor): Double;
+function TSeedAnalyser.MarkFromCamera(const Rect: TDoubleRect{$ifdef PREPARING_IMAGE}; const Supressor: PGradientSupressor{$endif}): Double;
 var
     ProcessResults : TDataVector;
 begin
     InterlockedIncrement64(AnalisedCount);
+    {$ifdef PREPARING_IMAGE}
     ProcessResults := FNet.ProcessData(PrepareImage(Img2Vector(@Camera.GetColor, Round(FWidth*Rect.Left), Round(FHeight*Rect.Top), Round(FWidth*Rect.Right), Round(FHeight*Rect.Bottom), FInputImageWidth, FInputImageHeight), FInputImageWidth, FInputImageHeight, DefaultDestValueOfPrepareImage, Supressor, DefaultSupressorTimePeriodOfPrepareImage));
+    {$else}
+    ProcessResults := FNet.ProcessData(Img2Vector(@Camera.GetColor, Round(FWidth*Rect.Left), Round(FHeight*Rect.Top), Round(FWidth*Rect.Right), Round(FHeight*Rect.Bottom), FInputImageWidth, FInputImageHeight));
+    {$endif}
     Exit(ProcessResults[0]-ProcessResults[1]);
 end;
 
@@ -123,7 +130,7 @@ begin
         for j := 0 to FAreaCount - 1 do
         begin
             i := GetNextArea;
-            FAreaValue[i] := MarkFromCamera(FAreas[i], @FGradientSupressors[i]);
+            FAreaValue[i] := MarkFromCamera(FAreas[i]{$ifdef PREPARING_IMAGE}, @FGradientSupressors[i]{$endif});
             FAreaStatus[i] := FAreaValue[i] > 0;
         end;
         InterlockedIncrement64(FNonResetingAnalisedCount);
@@ -193,7 +200,9 @@ begin
     SetLength(FAreas, FAreaCount);
     SetLength(FAreaStatus, FAreaCount);
     SetLength(FAreaValue, FAreaCount);
+    {$ifdef PREPARING_IMAGE}
     SetLength(FGradientSupressors, FAreaCount);
+    {$endif}
     for i := 0 to FAreaCount - 1 do
     begin
         SectionName := 'DetectArea' + IntToStr(i);

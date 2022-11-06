@@ -1,0 +1,1 @@
+{$undefine PREPARING_IMAGE}

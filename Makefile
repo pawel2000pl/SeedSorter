@@ -1,16 +1,16 @@
 all: clear Sorter Learning Configurator GpioController wash
 
 Sorter: 
-	fpc -O3 -OoAUTOINLINE -Mobjfpc -dUseCThreads -Sh -Si "Analyser/Sorter.pas" "-FuCamera/" "-Fuutils/" "-oSorter"
+	fpc -O3 -OoAUTOINLINE -Mobjfpc -dUseCThreads -Sh -Si "Analyser/Sorter.pas" "-FuCamera/" "-Fushared/" "-Ishared/" "-oSorter"
 	
 Learning: 
-	fpc -O3 -OoAUTOINLINE -Mobjfpc -dUseCThreads -Sh -Si "Learning/Learning.pas" "-Fuutils/" "-oLearning"
+	fpc -O3 -OoAUTOINLINE -Mobjfpc -dUseCThreads -Sh -Si "Learning/Learning.pas" "-Fushared/" "-Ishared/" "-oLearning"
 	
 Configurator:
 	lazbuild "Configurator/SeedSorterConfigurator.lpr"	
 	
 GpioController:
-	fpc -O3 -OoAUTOINLINE -Mobjfpc -dUseCThreads -Sh -Si "Gpio/GpioController.pas" "-Fuutils/" "-oGpioController"
+	fpc -O3 -OoAUTOINLINE -Mobjfpc -dUseCThreads -Sh -Si "Gpio/GpioController.pas" "-Fushared/" "-Ishared/" "-oGpioController"
 	
 Service: 	
 	chmod u+x "scripts/Service.sh"
@@ -39,7 +39,7 @@ wash:
 	bash "./scripts/clean.sh" "Analyser"
 	bash "./scripts/clean.sh" "Learning"	
 	bash "./scripts/clean.sh" "Camera"	
-	bash "./scripts/clean.sh" "utils"
+	bash "./scripts/clean.sh" "shared"
 	bash "./scripts/clean.sh" "Service"
 	bash "./scripts/clean.sh" "Gpio"
 	rm -rf "Configurator/lib"

@@ -1,6 +1,7 @@
 program Demo;
 
 {$Mode ObjFpc}
+{$I defines.inc}
 
 uses
     cthreads, SysUtils, Classes, UniversalImage, math, IniFiles, FeedForwardNet, VectorizeImage, SampleLoader, Teacher;
@@ -47,7 +48,7 @@ begin
 end;
 
 const 
-  LearningThreadCount = 16;
+  LearningThreadCount = 4;
 
 var
     i : Integer;
@@ -70,7 +71,11 @@ begin
     t := GetTickCount64;
     for i := 0 to Length(Samples)-1 do
     begin
+        {$ifdef PREPARING_IMAGE}
         VectorSamples[i] := PrepareImage(Img2Vector(@Samples[i].Image.GetColorFromHelper, 0, 0, Samples[i].Image.Width-1, Samples[i].Image.Height-1, InputImageWidth, InputImageHeight), InputImageWidth, InputImageHeight);
+        {$else}
+        VectorSamples[i] := Img2Vector(@Samples[i].Image.GetColorFromHelper, 0, 0, Samples[i].Image.Width-1, Samples[i].Image.Height-1, InputImageWidth, InputImageHeight);
+        {$endif}
         net.ProcessData(VectorSamples[i]); //only for timing
         VectorOutputs[i] := [ifthen(Samples[i].Verdict, 1, 0), ifthen(Samples[i].Verdict, 0, 1)];
     end;
@@ -93,7 +98,7 @@ begin
     for i := 0 to LearningThreadCount-1 do 
     begin
         CurrentValue := nets[i].GetDataDerivate([VectorSamples[0], VectorSamples[High(Samples)]], 1e-3).squaredMean;
-        CurrentValue := CurrentValue + 1.0/(1.0+CurrentValue);
+        CurrentValue := CurrentValue + 3.0/(1.0+CurrentValue);
         CurrentValue += 3.0*(1.0-nets[i].CheckNetwork(VectorSamples, VectorOutputs, @SumOfRoundedDifferences));
         if CurrentValue < BestValue then
         begin

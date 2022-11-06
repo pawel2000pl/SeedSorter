@@ -22,7 +22,7 @@ type
   PGradientSupressor = ^TGradientSupressor;
 
 const DefaultDestValueOfPrepareImage = 0.93;
-const DefaultSupressorTimePeriodOfPrepareImage = 120;
+const DefaultSupressorTimePeriodOfPrepareImage = 3;
 
   function Img2Vector(const fun : TColorFunction; const left, top, right, bottom, DestWidth, DestHeight : Integer) : TDoubleArray;
   procedure NormalizeVector(var v : TDoubleArray);
