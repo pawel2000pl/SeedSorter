@@ -61,5 +61,18 @@ install-dependences:
 	sudo apt update -y
 	sudo apt install -y libv4l-0 libv4l-dev fpc lazarus
 	
+turn-off-all:
+	chmod u+x "scripts/TurnOffAll.sh"
+	bash "./scripts/TurnOffAll.sh"
+	
+test-all:
+	chmod u+x "scripts/TestAll.sh"
+	bash "./scripts/TestAll.sh"
+	
+test-all-async:
+	chmod u+x "scripts/TestAllAsync.sh"
+	bash "./scripts/TestAllAsync.sh"
+	
+	
 .DEFAULT: all
-.PHONY: install-dependences Learning Sorter Configurator clean clear learn configure GpioController Service RemoveService walkthrough wash all
+.PHONY: install-dependences Learning Sorter Configurator clean clear learn configure GpioController Service RemoveService walkthrough wash all test-all-async test-all turn-off-all

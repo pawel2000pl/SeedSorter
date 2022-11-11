@@ -1,1 +1,1 @@
-{$undefine PREPARING_IMAGE}
+{$UnDef PREPARING_IMAGE}

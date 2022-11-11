@@ -4,7 +4,7 @@ program Demo;
 {$I defines.inc}
 
 uses
-    cthreads, SysUtils, Classes, UniversalImage, math, IniFiles, FeedForwardNet, VectorizeImage, SampleLoader, Teacher;
+    cthreads, SysUtils, Classes, UniversalImage, math, IniFiles, FeedForwardNet, VectorizeImage, SampleLoader, Teacher, Queues;
 
 var
     VectorSamples : array of TDataVector;
@@ -47,20 +47,24 @@ begin
     Exit(0);
 end;
 
-const 
-  LearningThreadCount = 4;
 
 var
     i : Integer;
     t : QWord;
+    LearningThreadCount: Integer;
     net : TFeedForwardNet;
-    nets : array[0..LearningThreadCount-1] of TFeedForwardNet;
-    learningThreads : array[0..LearningThreadCount-1] of TThreadID;
+    nets : array of TFeedForwardNet;
+    learningThreads : array of TThreadID;
     BestValue, CurrentValue : Double;
 begin    
     Randomize;
     Samples := [];
     LoadSamples;
+    LearningThreadCount := GetCoreCount();
+    nets := [];
+    learningThreads := [];
+    SetLength(nets, LearningThreadCount);
+    SetLength(learningThreads, LearningThreadCount);
     
     Writeln('Learning for size: ', InputImageWidth, 'x', InputImageHeight);    
     net := TFeedForwardNet.Create([InputImageWidth*InputImageHeight*3, 16, 9, 2]);

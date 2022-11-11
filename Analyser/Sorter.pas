@@ -3,7 +3,7 @@ program Sorter;
 {$Mode ObjFpc}
 
 uses
-    cThreads, SysUtils, Analyser, BaseUnix, Unix, v4l1;
+    cThreads, SysUtils, Analyser, BaseUnix, v4l1;
 
 const 
     TerminateFile = '/dev/shm/TerminateSeedSorter';
@@ -38,7 +38,7 @@ begin
   Writeln(StdErr, 'Restart at: ', GetTickCount64);
   Flush(StdOut);
   Flush(StdErr);
-  FpExecV(ParamStr(0), nil);  
+  FpExit(1);  
 end;
     
 var
@@ -99,4 +99,6 @@ begin
         DeleteFile(TerminateFile);    
 
     Writeln(StdErr, 'Terminate at: ', GetTickCount64);
+
+    FpExit(0);
 end.

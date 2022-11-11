@@ -155,6 +155,7 @@ type
         
 operator = (const a, b: TQueueRecord): boolean; inline;
 function StaticProcedureToObjectMethod(const Proc : TProcedure) : TQueueMethod;
+function GetCoreCount : PtrUInt;
 
 implementation
 

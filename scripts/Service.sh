@@ -1,6 +1,7 @@
 #!/bin/bash
 
-MY_PATH="/home/"`whoami`"/.seedsorter"
+TERMINATION_FILE='/dev/shm/TerminateSeedSorter'
+MY_PATH="$HOME/.seedsorter"
 cd $MY_PATH
 
 sudo ip address add 192.168.2.1/24 dev `ip address show | grep -P -o "e[tn][hp][0-9]" | head -n 1`
@@ -33,7 +34,8 @@ do
         
     if [ `cat "$START_BUTTON_PATH/value"` == 1 ];
     then
-        $MY_PATH/Sorter | $MY_PATH/GpioController &
+        rm -rf "$TERMINATION_FILE"
+        while [ ! -e "$TERMINATION_FILE" ]; do $MY_PATH/Sorter && break || sleep 3s; done | $MY_PATH/GpioController &
         
         while [ `cat "$STOP_BUTTON_PATH/value"` == 0 ];
         do
@@ -43,7 +45,7 @@ do
             sleep 0.05s
         done
         
-        touch '/dev/shm/TerminateSeedSorter'
+        touch "$TERMINATION_FILE"
         sleep 1s
     fi
     
@@ -52,7 +54,7 @@ do
         sleep 3s            
         if [ `cat "$STOP_BUTTON_PATH/value"` == 1 ];
         then
-            touch '/dev/shm/TerminateSeedSorter'
+            touch "$TERMINATION_FILE"
             sleep 5s
             killall -9 Sorter && killall -9 GpioController
             break
