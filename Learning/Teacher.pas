@@ -83,7 +83,7 @@ begin
     epoch := 0;
     
     repeat                
-        TFeedForwardNet.AsyncStep(LearningInput, LearningOutput, Quickness, @net.LearnStep);
+        TFeedForwardNet.AsyncStep(LearningInput, LearningOutput, Quickness, @net.RandomLearnStep);
         LearningGrade := net.CheckNetwork(LearningInput, LearningOutput, @SumOfRoundedDifferences);
         TestGrade := net.CheckNetwork(TestInput, TestOutput, @SumOfRoundedDifferences);
 

@@ -171,9 +171,8 @@ begin
                         Result[tripleIndex] /= counts[index];
                         Result[tripleIndex+1] /= counts[index];
                         Result[tripleIndex+2] /= counts[index];
-                    end
-                        else
-                            Changes := True;
+                    end else
+                        Changes := True;
                 end;
             end;
     end;

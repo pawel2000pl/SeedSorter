@@ -16,7 +16,7 @@ type
 
 var
     Samples : array of TSampleImage;
-    InputImageWidth : Integer = 24;
+    InputImageWidth : Integer = 28;
     InputImageHeight : Integer = 32;
 
 procedure LoadSamples;
@@ -36,7 +36,7 @@ begin
         else
         begin
             img := DeformImage(image, mode mod 4);
-            Result := AddNoiseToImage(img);
+            Result := AddNoiseToImage(img, 3/256);
             if image <> img then
                 img.Free;
         end;

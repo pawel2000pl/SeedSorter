@@ -43,7 +43,7 @@ var
 begin
     net := TFeedForwardNet(P);
     net.RandomAboutOne;
-    TeachNet(net, VectorSamples, VectorOutputs, 0.03, 0.3);
+    TeachNet(net, VectorSamples, VectorOutputs, 0.003, 0.3);
     Exit(0);
 end;
 
@@ -56,10 +56,12 @@ var
     nets : array of TFeedForwardNet;
     learningThreads : array of TThreadID;
     BestValue, CurrentValue : Double;
+    NetDimenstions : array of Integer;
 begin    
     Randomize;
     Samples := [];
     LoadSamples;
+    NetDimenstions := [InputImageWidth*InputImageHeight*3, 16, 9, 2];
     LearningThreadCount := GetCoreCount();
     nets := [];
     learningThreads := [];
@@ -67,7 +69,7 @@ begin
     SetLength(learningThreads, LearningThreadCount);
     
     Writeln('Learning for size: ', InputImageWidth, 'x', InputImageHeight);    
-    net := TFeedForwardNet.Create([InputImageWidth*InputImageHeight*3, 16, 9, 2]);
+    net := TFeedForwardNet.Create(NetDimenstions);
     net.RandomAboutOne;
 
     SetLength(VectorSamples, Length(Samples));
@@ -89,7 +91,7 @@ begin
 
     for i := 0 to LearningThreadCount-1 do
     begin
-        nets[i] := TFeedForwardNet.Create([InputImageWidth*InputImageHeight*3, 6, 2]);
+        nets[i] := TFeedForwardNet.Create(NetDimenstions);
         sleep(100);
         random();
         learningThreads[i] := BeginThread(@LearnNet, Pointer(nets[i]));
