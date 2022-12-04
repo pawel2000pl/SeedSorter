@@ -21,6 +21,26 @@ type
   TGradientSupressor = array[0..3, 0..2] of Double;
   PGradientSupressor = ^TGradientSupressor;
 
+  { TImageVectorizer }
+
+  TImageVectorizer = class
+  type
+    TDataItem = record
+      NeedUpdate : Boolean;
+      Index : Integer;
+      SourceX : Integer;
+      SourceY : Integer;
+      Weight : Double;
+    end;
+  private
+    OutputLength : Integer;
+    DataLength : Integer;
+    Data : array of TDataItem;
+  public
+    function Vectorize(const fun : TColorFunction) : TDoubleArray;
+    constructor Create(const Left, Top, Right, Bottom, DestWidth, DestHeight : Integer; const Epsilon: Double = 1e-9);
+  end;
+
 const DefaultDestValueOfPrepareImage = 0.93;
 const DefaultSupressorTimePeriodOfPrepareImage = 3;
 
@@ -284,6 +304,108 @@ end;
 function TFPImageColorFunctionHelper.GetColorFromHelper(const x, y: Integer): TFPColor;
 begin
      Exit(Self.Colors[x, y]);
+end;
+
+{ TImageVectorizer }
+
+function TImageVectorizer.Vectorize(const fun : TColorFunction) : TDoubleArray;
+var
+  i : Integer;
+  c : TFPColor;
+begin
+  Result := [];
+  SetLength(Result, OutputLength);
+  for i := 0 to DataLength-1 do
+    with Data[i] do
+    begin
+      if NeedUpdate then
+        c := fun(SourceX, SourceY);
+      Result[Index] += Weight*c.Red;
+      Result[Index+1] += Weight*c.Green;
+      Result[Index+2] += Weight*c.Blue;
+    end;
+end;
+
+constructor TImageVectorizer.Create(const Left, Top, Right, Bottom, DestWidth, DestHeight: Integer; const Epsilon: Double);
+var
+  x, y, ix, iy, i, DestIndex, SourceWidth, SourceHeight, AdditionalSpace : Integer;
+  sxa, sya, sxb, syb, WidthScale, HeightScale, AreaScale, w, rx1, ry1, rx2, ry2 : Double;
+
+  PointCount : Integer;
+  DestinationIndexes : array of array of array of Integer;
+  DestinationWeights : array of array of array of Double;
+  DestinationCounts : array of array of Integer;
+  Dest : array of Double;
+begin
+  assert(Epsilon > 0);
+  SourceWidth := Right-Left+1;
+  SourceHeight := Bottom-Top+1;
+  OutputLength := 3 * DestWidth * DestHeight;
+  WidthScale := SourceWidth/DestWidth;
+  HeightScale := SourceHeight/DestHeight;
+  AreaScale := 1/(WidthScale*HeightScale);
+
+  PointCount := 0;
+  AdditionalSpace := Ceil(1/WidthScale+1) * Ceil(1/HeightScale+1);
+  DestinationIndexes := [];
+  DestinationWeights := [];
+  DestinationCounts := [];
+  SetLength(DestinationIndexes, SourceWidth, SourceHeight, AdditionalSpace);
+  SetLength(DestinationWeights, SourceWidth, SourceHeight, AdditionalSpace);
+  SetLength(DestinationCounts, SourceWidth, SourceHeight);
+
+  for y := 0 to DestHeight-1 do
+  begin
+    sya := HeightScale*y;
+    syb := sya+HeightScale;
+    for x := 0 to DestWidth-1 do
+    begin
+      sxa := WidthScale*x;
+      sxb := sxa+WidthScale;
+      DestIndex := y * DestWidth + x;
+
+      for iy := Floor(sya) to Floor(syb) do
+        for ix := Floor(sxa) to Floor(sxb) do
+        begin
+          rx1 := min(sxb, ix+1)-ix;
+          ry1 := min(syb, iy+1)-iy;
+          rx2 := max(sxa, ix)-ix;
+          ry2 := max(sya, iy)-iy;
+          w := AreaScale * (rx1-rx2) * (ry1-ry2);
+          if w <= Epsilon then
+            Continue;
+          DestinationIndexes[ix, iy, DestinationCounts[ix, iy]] := DestIndex;
+          DestinationWeights[ix, iy, DestinationCounts[ix, iy]] := w;
+          Inc(DestinationCounts[ix, iy]);
+          Inc(PointCount);
+        end;
+    end;
+  end;
+
+  Data := [];
+  Dest := [];
+  SetLength(Data, PointCount);
+  SetLength(Dest, PointCount);
+  DataLength := PointCount;
+  PointCount := 0;
+  for y := 0 to SourceHeight-1 do
+    for x := 0 to SourceWidth-1 do
+    begin
+      Data[PointCount].NeedUpdate := True;
+      for i := 0 to DestinationCounts[x, y]-1 do
+        with Data[PointCount] do
+        begin
+          Index := 3*DestinationIndexes[x, y, i];
+          SourceX := x+Left;
+          SourceY := y+Right;
+          Weight := DestinationWeights[x, y, i]*(1/High(Word));
+          Dest[DestinationIndexes[x, y, i]] += DestinationWeights[x, y, i];
+          Inc(PointCount);
+        end;
+    end; 
+
+  for i := 0 to DestWidth*DestHeight-1 do
+    Data[i].Weight /= Dest[i];
 end;
 
 end.

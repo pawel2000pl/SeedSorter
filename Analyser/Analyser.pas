@@ -35,6 +35,7 @@ type
         FAreas: array of TDoubleRect;
         FAreaStatus: array of boolean;
         FAreaValue: array of Double;
+        FAreaVectorizer : array of TImageVectorizer;
         {$ifdef PREPARING_IMAGE}
         FGradientSupressors: array of TGradientSupressor;
         {$endif}
@@ -42,7 +43,7 @@ type
         function GetNextArea: integer;
         procedure Capture;
         procedure Analysis;
-        function MarkFromCamera(const Rect: TDoubleRect{$ifdef PREPARING_IMAGE}; const Supressor: PGradientSupressor = nil{$endif}): Double; inline;
+        function MarkFromCamera(const Rect: TDoubleRect; Vectorizer : TImageVectorizer{$ifdef PREPARING_IMAGE}; const Supressor: PGradientSupressor = nil{$endif}): Double; inline;
     public
         property AreaCount: integer read FAreaCount;
         function GetAreaStatus(const Index: integer): boolean; inline;
@@ -85,16 +86,23 @@ begin
         FrameCount := 0;
 end;
 
-function TSeedAnalyser.MarkFromCamera(const Rect: TDoubleRect{$ifdef PREPARING_IMAGE}; const Supressor: PGradientSupressor{$endif}): Double;
+function TSeedAnalyser.MarkFromCamera(const Rect: TDoubleRect; Vectorizer : TImageVectorizer{$ifdef PREPARING_IMAGE}; const Supressor: PGradientSupressor{$endif}): Double;
 var
     ProcessResults : TDataVector;
 begin
     InterlockedIncrement64(AnalisedCount);
-    {$ifdef PREPARING_IMAGE}
-    ProcessResults := FNet.ProcessData(PrepareImage(Img2Vector(@Camera.GetColor, Round(FWidth*Rect.Left), Round(FHeight*Rect.Top), Round(FWidth*Rect.Right), Round(FHeight*Rect.Bottom), FInputImageWidth, FInputImageHeight), FInputImageWidth, FInputImageHeight, DefaultDestValueOfPrepareImage, Supressor, DefaultSupressorTimePeriodOfPrepareImage));
-    {$else}
-    ProcessResults := FNet.ProcessData(Img2Vector(@Camera.GetColor, Round(FWidth*Rect.Left), Round(FHeight*Rect.Top), Round(FWidth*Rect.Right), Round(FHeight*Rect.Bottom), FInputImageWidth, FInputImageHeight));
-    {$endif}
+    ProcessResults := FNet.ProcessData(
+      {$ifdef PREPARING_IMAGE}
+      PrepareImage(
+      {$endif}
+        Vectorizer.Vectorize(@Camera.GetColor) 
+      {$ifdef PREPARING_IMAGE}, 
+        FInputImageWidth, FInputImageHeight, 
+        DefaultDestValueOfPrepareImage, 
+        Supressor, 
+        DefaultSupressorTimePeriodOfPrepareImage)
+      {$endif}
+      );
     Exit(ProcessResults[0]-ProcessResults[1]);
 end;
 
@@ -130,7 +138,7 @@ begin
         for j := 0 to FAreaCount - 1 do
         begin
             i := GetNextArea;
-            FAreaValue[i] := MarkFromCamera(FAreas[i]{$ifdef PREPARING_IMAGE}, @FGradientSupressors[i]{$endif});
+            FAreaValue[i] := MarkFromCamera(FAreas[i], FAreaVectorizer[i]{$ifdef PREPARING_IMAGE}, @FGradientSupressors[i]{$endif});
             FAreaStatus[i] := FAreaValue[i] > 0;
         end;
         InterlockedIncrement64(FNonResetingAnalisedCount);
@@ -200,6 +208,7 @@ begin
     SetLength(FAreas, FAreaCount);
     SetLength(FAreaStatus, FAreaCount);
     SetLength(FAreaValue, FAreaCount);
+    SetLength(FAreaVectorizer, FAreaCount);
     {$ifdef PREPARING_IMAGE}
     SetLength(FGradientSupressors, FAreaCount);
     {$endif}
@@ -210,6 +219,12 @@ begin
         FAreas[i].Right := ConfigFile.ReadFloat(SectionName, 'Right', 0);
         FAreas[i].Top := ConfigFile.ReadFloat(SectionName, 'Top', 0);
         FAreas[i].Bottom := ConfigFile.ReadFloat(SectionName, 'Bottom', 0);
+        FAreaVectorizer[i] := TImageVectorizer.Create(
+          Round(FWidth*FAreas[i].Left), 
+          Round(FHeight*FAreas[i].Top), 
+          Round(FWidth*FAreas[i].Right), 
+          Round(FHeight*FAreas[i].Bottom), 
+          FInputImageWidth, FInputImageHeight);
     end;
     FAnalysisThreads := max(2, FQueue.CoreCount);
     for i := 0 to FAnalysisThreads-1 do
