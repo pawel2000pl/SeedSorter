@@ -1,14 +1,28 @@
-program Demo;
+program Learning;
 
 {$Mode ObjFpc}
 {$I defines.inc}
 
 uses
-    cthreads, SysUtils, Classes, UniversalImage, math, IniFiles, FeedForwardNet, VectorizeImage, SampleLoader, Teacher, Queues;
+    cthreads, ctypes, SysUtils, Classes, UniversalImage, math, IniFiles, FeedForwardNet, VectorizeImage, SampleLoader, Teacher;
 
 var
     VectorSamples : array of TDataVector;
     VectorOutputs : array of TDataVector;
+
+{$ifdef Linux}                     
+{$IfNDef USECTHREADS}{$Hint In case of linking error, add the cThreads unit as the first unit in the project}{$EndIf}
+function sysconf(i : cint) : clong; cdecl; external Name 'sysconf';
+{$endif}
+
+function GetCoreCount : PtrUInt;
+begin
+  {$ifdef Linux}
+  Result := sysconf(83);
+  {$else}
+  Result := GetCPUCount;
+  {$endif}
+end;
     
 procedure SaveToIni(net: TFeedForwardNet; FileName : AnsiString = '~/.seedsorter/config.ini');
 var

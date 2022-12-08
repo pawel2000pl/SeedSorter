@@ -1,7 +1,7 @@
 all: clear Sorter Learning Configurator GpioController wash
 
 Sorter: 
-	fpc -O3 -OoAUTOINLINE -Mobjfpc -dUseCThreads -Sh -Si "Analyser/Sorter.pas" "-FuCamera/" "-Fushared/" "-Ishared/" "-oSorter"
+	fpc -O3 -OoAUTOINLINE -Mobjfpc -dUseCThreads -Sh -Si "Analyser/Sorter.pas" "-Fushared/" "-Ishared/" "-oSorter"
 	
 Learning: 
 	fpc -O3 -OoAUTOINLINE -Mobjfpc -dUseCThreads -Sh -Si "Learning/Learning.pas" "-Fushared/" "-Ishared/" "-oLearning"
@@ -38,7 +38,6 @@ wash:
 	chmod u+x "scripts/clean.sh"
 	bash "./scripts/clean.sh" "Analyser"
 	bash "./scripts/clean.sh" "Learning"	
-	bash "./scripts/clean.sh" "Camera"	
 	bash "./scripts/clean.sh" "shared"
 	bash "./scripts/clean.sh" "Service"
 	bash "./scripts/clean.sh" "Gpio"
