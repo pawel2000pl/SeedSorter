@@ -229,7 +229,7 @@ begin
     end;
     Temperature := Temperatures[BestNetwork];
     FQuickness := Quicknesses[BestNetwork];
-    writeln(Epoch, #9, NotBetterCount, #9, BestGrade:2:6, #9, Temperature:2:8, #9, FQuickness:2:8);
+    writeln(Epoch, #9, NotBetterCount, #9, BestGrade:2:6, #9, Temperature:2:8, #9, FQuickness:2:8, #9, 'Best: ', BestNetwork);
 
     if NotBetterCount > MaxNotBetterCount then
       Break;

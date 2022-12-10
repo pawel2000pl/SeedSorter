@@ -8,25 +8,14 @@ uses
     UniversalImage, math, IniFiles, FeedForwardNet, 
     VectorizeImage, SampleLoader, NetTeacher;
 
+const 
+    DefaultConfigFileName = '~/.seedsorter/config.ini';
+
 var
     VectorSamples : array of TDataVector;
     VectorOutputs : array of TDataVector;
-
-{$ifdef Linux}                     
-{$IfNDef USECTHREADS}{$Hint In case of linking error, add the cThreads unit as the first unit in the project}{$EndIf}
-function sysconf(i : cint) : clong; cdecl; external Name 'sysconf';
-{$endif}
-
-function GetCoreCount : PtrUInt;
-begin
-  {$ifdef Linux}
-  Result := sysconf(83);
-  {$else}
-  Result := GetCPUCount;
-  {$endif}
-end;
     
-procedure SaveToIni(net: TFeedForwardNet; FileName : AnsiString = '~/.seedsorter/config.ini');
+procedure SaveToIni(net: TFeedForwardNet; FileName : AnsiString);
 var
     ConfigFile : TIniFile;
     NetPath, ConfusionPath : AnsiString;
@@ -56,23 +45,14 @@ end;
 var
     i : Integer;
     t : QWord;
-    LearningThreadCount: Integer;
     net : TFeedForwardNet;
-    nets : array of TFeedForwardNet;
-    learningThreads : array of TThreadID;
-    BestValue, CurrentValue : Double;
     NetDimenstions : array of Integer;
     Teacher : TNetwokTeacher;
 begin    
     Randomize;
     Samples := [];
     LoadSamples;
-    NetDimenstions := [InputImageWidth*InputImageHeight*3, 9, 2];
-    LearningThreadCount := GetCoreCount();
-    nets := [];
-    learningThreads := [];
-    SetLength(nets, LearningThreadCount);
-    SetLength(learningThreads, LearningThreadCount);
+    NetDimenstions := [InputImageWidth*InputImageHeight*3, 9, 9, 2];
     
     Writeln('Learning for size: ', InputImageWidth, 'x', InputImageHeight);    
     net := TFeedForwardNet.Create(NetDimenstions);
@@ -97,7 +77,7 @@ begin
     Teacher := TNetwokTeacher.Create(VectorSamples, VectorOutputs, 0.1, 0.1, @AverageDifference, net);
     Teacher.Learn();
     Teacher.Free;
-    SaveToIni(net); 
+    SaveToIni(net, DefaultConfigFileName); 
 
     Writeln;
     writeln(AnsiString(net.GetDataDerivate([VectorSamples[0], VectorSamples[High(Samples)]], 1e-3)));
@@ -108,8 +88,6 @@ begin
     writeln(net.CheckNetwork(VectorSamples, VectorOutputs, @SumOfRoundedDifferences):2:4);
 
     FreeSamples;
-    for i := 0 to LearningThreadCount-1 do
-        nets[i].Free;  
     
     Writeln('Done');
 end.
