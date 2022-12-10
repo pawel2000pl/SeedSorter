@@ -4,7 +4,9 @@ program Learning;
 {$I defines.inc}
 
 uses
-    cthreads, ctypes, SysUtils, Classes, UniversalImage, math, IniFiles, FeedForwardNet, VectorizeImage, SampleLoader, Teacher;
+    cthreads, ctypes, SysUtils, Classes, 
+    UniversalImage, math, IniFiles, FeedForwardNet, 
+    VectorizeImage, SampleLoader, NetTeacher;
 
 var
     VectorSamples : array of TDataVector;
@@ -51,17 +53,6 @@ begin
     ts.Free;
 end;
 
-function LearnNet(P: Pointer) : PtrInt;
-var
-    net : TFeedForwardNet;
-begin
-    net := TFeedForwardNet(P);
-    net.RandomAboutOne;
-    TeachNet(net, VectorSamples, VectorOutputs, 0.003, 0.3);
-    Exit(0);
-end;
-
-
 var
     i : Integer;
     t : QWord;
@@ -71,11 +62,12 @@ var
     learningThreads : array of TThreadID;
     BestValue, CurrentValue : Double;
     NetDimenstions : array of Integer;
+    Teacher : TNetwokTeacher;
 begin    
     Randomize;
     Samples := [];
     LoadSamples;
-    NetDimenstions := [InputImageWidth*InputImageHeight*3, 16, 9, 2];
+    NetDimenstions := [InputImageWidth*InputImageHeight*3, 9, 2];
     LearningThreadCount := GetCoreCount();
     nets := [];
     learningThreads := [];
@@ -101,32 +93,10 @@ begin
     end;
     t := GetTickCount64 - t;
     Writeln('Prepared ', Length(Samples), ' samples in ', t, 'ms. Expected PPS = ', 1000*Length(Samples)/t:2:4, ' (per thread)');
-    net.Free;
 
-    for i := 0 to LearningThreadCount-1 do
-    begin
-        nets[i] := TFeedForwardNet.Create(NetDimenstions);
-        sleep(100);
-        random();
-        learningThreads[i] := BeginThread(@LearnNet, Pointer(nets[i]));
-    end;
-
-    for i := 0 to LearningThreadCount-1 do
-      WaitForThreadTerminate(learningThreads[i], High(LongInt));
-
-    BestValue := 1e30;    
-    for i := 0 to LearningThreadCount-1 do 
-    begin
-        CurrentValue := nets[i].GetDataDerivate([VectorSamples[0], VectorSamples[High(Samples)]], 1e-3).squaredMean;
-        CurrentValue := CurrentValue + 3.0/(1.0+CurrentValue);
-        CurrentValue += 3.0*(1.0-nets[i].CheckNetwork(VectorSamples, VectorOutputs, @SumOfRoundedDifferences));
-        if CurrentValue < BestValue then
-        begin
-            BestValue := CurrentValue;
-            net := nets[i];
-        end;        
-    end;
-
+    Teacher := TNetwokTeacher.Create(VectorSamples, VectorOutputs, 0.1, 0.1, @AverageDifference, net);
+    Teacher.Learn();
+    Teacher.Free;
     SaveToIni(net); 
 
     Writeln;
