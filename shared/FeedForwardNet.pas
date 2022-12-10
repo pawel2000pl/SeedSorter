@@ -3,6 +3,7 @@ unit FeedForwardNet;
 {$mode ObjFPC}{$H+}
 {$IfNDef ASSERTIONS} {$Inline On} {$Optimization AutoInline} {$Endif}
 {$WARN 6058 off : Call to subroutine "$1" marked as inline is not inlined}
+{$Define SIGMOID_APPROXIMATION}
 
 interface
 
@@ -979,13 +980,22 @@ end;
 
 procedure TFeedForwardNet.LoadFromStream(Stream: TStream);
 var
-  i, c: integer;
+  i, c, oldC: integer;
 begin
-  DisposeLayers;
   c := Stream.ReadDWord;
+  oldC := Length(fLayers);
+
+  for i := c to oldC-1 do
+    if (fLayers[i] <> nil) and Assigned(fLayers[i]) then
+      FreeAndNil(fLayers[i]);
+  
   SetLength(fLayers, c);
+
   for i := 0 to c - 1 do
-    fLayers[i] := TFeedForwardLayer.Create(Stream);
+    if i < oldC then
+      fLayers[i].LoadFromStream(Stream)
+    else
+      fLayers[i] := TFeedForwardLayer.Create(Stream);
 end;
 
 procedure TFeedForwardNet.SaveToFile(const FileName: ansistring);
@@ -1064,16 +1074,61 @@ end;
 
 { TFeedForwardLayer }
 
-class function TFeedForwardLayer.ActivateFunction(x: double): double;
+{$IfDef SIGMOID_APPROXIMATION}
+                                                             
+const
+ Weights : array of Double =
+    (1.0424094510441026528724250965751707553863525390625,
+    -1.6172268808167391540564494789578020572662353515625,
+    1.48259512044627950189124021562747657299041748046875,
+    -0.40678109023665520727064404127304442226886749267578125,
+    0.4992991982961161312459807959385216236114501953125);
+
+class function TFeedForwardLayer.ActivateFunction(x: double): double; inline;
+var
+  dx, adx : Double;
+begin
+  dx := x + x*x*x;
+  adx := abs(dx);
+  Result := (Weights[0]  / (adx+1)
+            + Weights[1] / (adx+4)
+            + Weights[2] / (adx+16)
+            + Weights[3] / (adx+64)) * dx
+            + Weights[4];
+end;     
+
+class function TFeedForwardLayer.DerivateOfActivateFunction(x: double): double; inline;
+var
+  k, ak, dk, m1, m4, m16, m64 : Double;
+begin
+  dk := 1+3*x*x;
+  k := x+x*x*x;
+  ak := abs(k);
+  m1 := 1+ak;
+  m4 := 4+ak;
+  m16 := 16+ak;
+  m64 := 64+ak;
+  Result :=
+   + Weights[0]*1*dk/(m1*m1)
+   + Weights[1]*4*dk/(m4*m4)
+   + Weights[2]*16*dk/(m16*m16)
+   + Weights[3]*64*dk/(m64*m64);
+end;
+
+{$else}
+
+class function TFeedForwardLayer.ActivateFunction(x: double): double; inline;
 begin
   Exit(1 / (1 + exp(-x)));
 end;
 
-class function TFeedForwardLayer.DerivateOfActivateFunction(x: double): double;
+class function TFeedForwardLayer.DerivateOfActivateFunction(x: double): double; inline;
 begin
   Result :=  1 / (1 + exp(-x));
   Result := Result*(1-Result);
 end;
+
+{$endif}
 
 function TFeedForwardLayer.DegreeOfFreedomCount: Integer;
 begin

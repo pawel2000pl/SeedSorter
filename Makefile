@@ -1,16 +1,16 @@
 all: clear Sorter Learning Configurator GpioController wash
 
 Sorter: 
-	fpc -O3 -OoAUTOINLINE -Mobjfpc -dUseCThreads -Sh -Si "Analyser/Sorter.pas" "-Fushared/" "-Ishared/" "-oSorter"
+	fpc -O4 -OoAUTOINLINE -Mobjfpc -dUseCThreads -Sh -Si "Analyser/Sorter.pas" "-Fushared/" "-Ishared/" "-oSorter"
 	
 Learning: 
-	fpc -O3 -OoAUTOINLINE -Mobjfpc -dUseCThreads -Sh -Si "Learning/Learning.pas" "-Fushared/" "-Ishared/" "-oLearning"
+	fpc -O4 -OoAUTOINLINE -Mobjfpc -dUseCThreads -Sh -Si "Learning/Learning.pas" "-Fushared/" "-Ishared/" "-oLearning"
 	
 Configurator:
 	lazbuild "Configurator/SeedSorterConfigurator.lpr"	
 	
 GpioController:
-	fpc -O3 -OoAUTOINLINE -Mobjfpc -dUseCThreads -Sh -Si "Gpio/GpioController.pas" "-Fushared/" "-Ishared/" "-oGpioController"
+	fpc -O4 -OoAUTOINLINE -Mobjfpc -dUseCThreads -Sh -Si "Gpio/GpioController.pas" "-Fushared/" "-Ishared/" "-oGpioController"
 	
 Service: 	
 	chmod u+x "scripts/Service.sh"
