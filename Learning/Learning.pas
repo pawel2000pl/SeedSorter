@@ -20,7 +20,6 @@ var
     ConfigFile : TIniFile;
     NetPath, ConfusionPath : AnsiString;
     FS : TFileStream;
-    ts : TStringList;
 begin
     FileName := StringReplace(FileName, '~/', GetUserDir, []);
     ConfigFile := TIniFile.Create(FileName);
@@ -36,10 +35,7 @@ begin
     net.SaveToStream(FS);
     FS.Free;
     
-    ts := TStringList.Create;
-    ts.text := ConfusionMatrixToHtml(net.ConfusionMatrix(VectorSamples, VectorOutputs));
-    ts.SaveToFile(ConfusionPath);
-    ts.Free;
+    StringToFile(ConfusionMatrixToHtml(net.ConfusionMatrix(VectorSamples, VectorOutputs)), ConfusionPath);
 end;
 
 var

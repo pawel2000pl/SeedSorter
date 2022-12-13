@@ -14,10 +14,10 @@ type
         DeltaTime = 1000 div Freq;
     private
         gpio : TGpioPinController;
-        FValue : Boolean;
         FTurnedTime : QWord;
-        FTerminating : Boolean;
         FDelay : Word;
+        FValue : Boolean;
+        FTerminating : Boolean;
         FState : Boolean;
         
         procedure SetValue(const AValue : Boolean);
@@ -51,8 +51,8 @@ begin
                     FState := NewState;
                     gpio.Value := FState;
                 end;
-            end; 
-        end;    
+            end;
+        end;    //TODO: sprawdzenie konkurencyjności wątków
         sleep(Max(1, Min(DeltaTime div 2, Time-Delay)));
     until FTerminating;    
 end;

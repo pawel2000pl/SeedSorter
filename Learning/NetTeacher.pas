@@ -80,7 +80,7 @@ begin
   begin
     q := GradeFunction(LearningOutput[i], Outputs[i]) * Quickness;
     if q <> 0 then
-      net.RandomLearnStep(LearningInput[i], LearningOutput[i], q);
+      net.LearnStep(LearningInput[i], LearningOutput[i], q);
   end;
 end;
 
@@ -150,6 +150,8 @@ const
   ThreadCount = 8;
   MaxEpochs = 1024;
   MaxNotBetterCount = 16;
+  MinTemperature = 1e-12;
+  MinDeltaGrade = 1e-4;
 var
   Temperature : Extended;
   Network : array of TFeedForwardNet;
@@ -168,7 +170,7 @@ begin
   SetLength(Temperatures, ThreadCount);
   Quicknesses := [];
   SetLength(Quicknesses, ThreadCount);
-  Temperature := FQuickness / 256;
+  Temperature := FQuickness;
   NetworkStamp := TMemoryStream.Create;
   TheBestNetworkStamp := TMemoryStream.Create;
   TheBestGrade := 0;
@@ -190,7 +192,7 @@ begin
     begin
       NetworkStamp.Position := 0;
       Network[i].LoadFromStream(NetworkStamp);
-      if epoch mod 2 = 0 then
+      if (epoch mod 2 = 0) and (Temperature > MinTemperature) then
       begin
         Temperatures[i] := Temperature*sqr((i+ThreadCount/2)/ThreadCount);
         Quicknesses[i] := FQuickness;
@@ -199,7 +201,7 @@ begin
         Temperatures[i] := Temperature;
         Quicknesses[i] := FQuickness*sqrt((i+ThreadCount/2)/ThreadCount);
       end;
-      if i > 0 then
+      if (i > 0) and (Temperature > MinTemperature) then
         Network[i].RandomAllAddition(0, Temperatures[i]);
     end;
     
@@ -224,8 +226,9 @@ begin
     begin
       TheBestNetworkStamp.Clear;
       Network[BestNetwork].SaveToStream(TheBestNetworkStamp);
+      if BestGrade > TheBestGrade + MinDeltaGrade then
+        NotBetterCount := 0;
       TheBestGrade := BestGrade;
-      NotBetterCount := 0;
     end;
     Temperature := Temperatures[BestNetwork];
     FQuickness := Quicknesses[BestNetwork];
