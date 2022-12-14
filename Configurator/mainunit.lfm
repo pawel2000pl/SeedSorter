@@ -152,15 +152,14 @@ object MainForm: TMainForm
     end
   end
   object ScrollBox1: TScrollBox
-    Left = 180
+    Left = 184
     Height = 546
     Top = 0
-    Width = 694
+    Width = 678
     HorzScrollBar.Page = 107
     VertScrollBar.Page = 106
-    Anchors = [akTop, akLeft, akRight, akBottom]
     ClientHeight = 544
-    ClientWidth = 692
+    ClientWidth = 676
     ParentFont = False
     TabOrder = 1
     object PaintBox1: TPaintBox
