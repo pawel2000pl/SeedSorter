@@ -65,7 +65,7 @@ begin
         VectorSamples[i] := Img2Vector(@Samples[i].Image.GetColorFromHelper, 0, 0, Samples[i].Image.Width-1, Samples[i].Image.Height-1, InputImageWidth, InputImageHeight);
         {$endif}
         net.ProcessData(VectorSamples[i]); //only for timing
-        VectorOutputs[i] := [ifthen(Samples[i].Verdict, 1, 0), ifthen(Samples[i].Verdict, 0, 1)];
+        VectorOutputs[i] := [ifthen(Samples[i].Verdict, 0.9999, 0.0001), ifthen(Samples[i].Verdict, 0.0001, 0.9999)];
     end;
     t := GetTickCount64 - t;
     Writeln('Prepared ', Length(Samples), ' samples in ', t, 'ms. Expected PPS = ', 1000*Length(Samples)/t:2:4, ' (per thread)');
