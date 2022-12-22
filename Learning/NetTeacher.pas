@@ -72,11 +72,11 @@ end;
 
 function TNetwokTeacher.Learn : TFeedForwardNet;
 const
-  EpochsPerThread = 16;
+  EpochsPerThread = 64;
   ThreadCount = 8;
   MaxEpochs = 1024;
   MaxNotBetterCount = 16;
-  MinTemperature = 1e-12;
+  MinTemperature = 1e-30;
   MinDeltaGrade = 1e-4;
 var
   Temperature : Extended;
@@ -96,7 +96,7 @@ begin
   SetLength(Temperatures, ThreadCount);
   Quicknesses := [];
   SetLength(Quicknesses, ThreadCount);
-  Temperature := FQuickness;
+  Temperature := FQuickness/256;
   NetworkStamp := TMemoryStream.Create;
   TheBestNetworkStamp := TMemoryStream.Create;
   TheBestGrade := 0;
@@ -127,7 +127,7 @@ begin
         Temperatures[i] := Temperature;
         Quicknesses[i] := FQuickness*sqrt((i+ThreadCount/2)/ThreadCount);
       end;
-      if (i > 0) and (Temperature > MinTemperature) then
+      if (Temperature > MinTemperature) then
         Network[i].RandomAllAddition(0, Temperatures[i]);
     end;
     

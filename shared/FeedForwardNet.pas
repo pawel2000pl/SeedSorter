@@ -1090,29 +1090,29 @@ var
 begin
   dx := x + x*x*x;
   adx := abs(dx);
-  Result := (Weights[0]  / (adx+1)
+  Result := (Weights[0]  / (adx+2)
             + Weights[1] / (adx+4)
-            + Weights[2] / (adx+16)
-            + Weights[3] / (adx+64)) * dx
+            + Weights[2] / (adx+8)
+            + Weights[3] / (adx+16)) * dx
             + Weights[4];
 end;     
 
 class function TFeedForwardLayer.DerivateOfActivateFunction(x: double): double; inline;
 var
-  k, ak, dk, m1, m4, m16, m64 : Double;
+  k, ak, dk, m1, m2, m3, m4 : Double;
 begin
   dk := 1+3*x*x;
   k := x+x*x*x;
   ak := abs(k);
-  m1 := 1+ak;
-  m4 := 4+ak;
-  m16 := 16+ak;
-  m64 := 64+ak;
+  m1 := 2+ak;
+  m2 := 4+ak;
+  m3 := 8+ak;
+  m4 := 16+ak;
   Result :=
-   + Weights[0]*1*dk/(m1*m1)
-   + Weights[1]*4*dk/(m4*m4)
-   + Weights[2]*16*dk/(m16*m16)
-   + Weights[3]*64*dk/(m64*m64);
+   + Weights[0]*2*dk/(m1*m1)
+   + Weights[1]*4*dk/(m2*m2)
+   + Weights[2]*8*dk/(m3*m3)
+   + Weights[3]*16*dk/(m4*m4);
 end;
 
 {$else}
