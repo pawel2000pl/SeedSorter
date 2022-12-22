@@ -70,7 +70,7 @@ begin
     t := GetTickCount64 - t;
     Writeln('Prepared ', Length(Samples), ' samples in ', t, 'ms. Expected PPS = ', 1000*Length(Samples)/t:2:4, ' (per thread)');
 
-    Teacher := TNetwokTeacher.Create(VectorSamples, VectorOutputs, 0.1, 0.1, @AverageDifference, net);
+    Teacher := TNetwokTeacher.Create(VectorSamples, VectorOutputs, 0.1, 0.03, @SumOfSquaresOfDifferences, net);
     Teacher.Learn();
     Teacher.Free;
     SaveToIni(net, DefaultConfigFileName); 
@@ -81,7 +81,7 @@ begin
     writeln(AnsiString(net.GetDataDerivate([VectorSamples[0], VectorSamples[High(Samples)]], 1e-9)));
     writeln;
     writeln('Accuracy');
-    writeln(net.CheckNetwork(VectorSamples, VectorOutputs, @SumOfRoundedDifferences):2:4);
+    writeln(net.CheckNetwork(VectorSamples, VectorOutputs, @SameMaxIndex):2:4);
 
     FreeSamples;
     

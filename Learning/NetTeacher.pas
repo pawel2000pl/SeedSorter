@@ -45,93 +45,19 @@ type
     constructor Create(const ThreadLabel : AnsiString; Teacher : TNetwokTeacher; Network : TFeedForwardNet; StepCount : PtrUInt; Quickness : Double);
   end;
 
-
-procedure LearnStep(net : TFeedForwardNet; 
-  const LearningInput, LearningOutput : array of TDataVector;
-  Quickness : Double; GradeFunction : TGradeFunction);
-function CheckNetwork(Network : TFeedForwardNet; const Expected, Current : array of TDataVector; GradeFunction : TGradeFunction) : Double;
-
-function AlwaysOne(const Expected, Current : TDataVector) : Double;
-function MaxIndexHard(const Expected, Current : TDataVector) : Double;
-function AverageDistance(const Expected, Current : TDataVector) : Double;
-function AverageDifference(const Expected, Current : TDataVector) : Double;
-
 implementation
 
 uses
   SysUtils, Math;
-
-procedure LearnStep(net : TFeedForwardNet; 
-  const LearningInput, LearningOutput: array of TDataVector; 
-  Quickness: Double; GradeFunction: TGradeFunction);
-var
-  Outputs : array of TDataVector;
-  i : Integer;
-  q : Double;
-begin
-  Assert(Length(LearningInput) = Length(LearningOutput));
-  Outputs := [];
-  SetLength(Outputs, Length(LearningInput));
-
-  for i := 0 to Length(LearningInput)-1 do
-    Outputs[i] := net.ProcessData(LearningInput[i]);
-  
-  for i in Shuf(Length(LearningInput)) do
-  begin
-    q := GradeFunction(LearningOutput[i], Outputs[i]) * Quickness;
-    if q <> 0 then
-      net.LearnStep(LearningInput[i], LearningOutput[i], q);
-  end;
-end;
-
-function CheckNetwork(Network : TFeedForwardNet; const Expected, Current: array of TDataVector;
- GradeFunction: TGradeFunction): Double;
-var
-  i : Integer;
-begin
-  Result := 0;
-  for i := 0 to Length(Expected)-1 do
-    Result += GradeFunction(Network.ProcessData(Expected[i]), Current[i]);
-  Result /= Length(Expected);
-end;
-
-function AlwaysOne(const Expected, Current: TDataVector): Double;
-begin
-  Exit(1.0);
-end;
-
-function MaxIndexHard(const Expected, Current: TDataVector): Double;
-begin
-  Result := specialize IfThen<Double>(MaxIndex(Expected) = MaxIndex(Current), 1, 0);
-end;
-
-function AverageDistance(const Expected, Current: TDataVector): Double;
-begin
-  Result := 1-Sqrt(SumOfSquares(Expected - Current)/Length(Expected));
-end;
-
-function SumOfAbs(x : TDataVector) : Double;
-var
-  d : Double;
-begin
-  Result := 0;
-  for d in x do
-    Result += abs(d);
-end;
-
-function AverageDifference(const Expected, Current: TDataVector): Double;
-begin
-  Result := 1-SumOfAbs(Expected - Current)/Length(Expected);
-end;
 
 procedure TNetworkLearningThread.Execute;
 var
   i : Integer;
 begin
   for i := 1 to FStepCount-1 do
-    LearnStep(FNetwork, FTeacher.FLearningInput, FTeacher.FLearningOutput, FQuickness, FTeacher.FGradeFunction);
-  FLearningSetGrade := CheckNetwork(FNetwork, FTeacher.FLearningInput, FTeacher.FLearningOutput, FTeacher.FGradeFunction);
-  FTestSetGrade := CheckNetwork(FNetwork, FTeacher.FTestInput, FTeacher.FTestOutput, FTeacher.FGradeFunction);
+    FNetwork.LearnStep(FTeacher.FLearningInput, FTeacher.FLearningOutput, FQuickness);
+  FLearningSetGrade := FNetwork.CheckNetwork(FTeacher.FLearningInput, FTeacher.FLearningOutput, FTeacher.FGradeFunction);
+  FTestSetGrade := FNetwork.CheckNetwork(FTeacher.FTestInput, FTeacher.FTestOutput, FTeacher.FGradeFunction);
 end;
 
 constructor TNetworkLearningThread.Create(const ThreadLabel : AnsiString; Teacher: TNetwokTeacher; Network : TFeedForwardNet; StepCount: PtrUInt; Quickness : Double);
