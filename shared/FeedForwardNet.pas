@@ -144,8 +144,8 @@ type
   end;
 
   {$If FPC_FULLVERSION >= 30200}
-  generic function ToDataVector<T>(const tab: array of T; const range: T = 1): TDataVector; overload;
-  generic function ToDataVector<T>(const Ptr: Pointer; const Len : PtrUInt; const range: T = 1): TDataVector; overload;
+  generic function ToDataVector<T>(const tab: array of T; const range: T): TDataVector; overload;
+  generic function ToDataVector<T>(const Ptr: Pointer; const Len : PtrUInt; const range: T): TDataVector; overload;
   {$EndIf}
 
 function SumOfSquaresOfDifferences(const a, b: TDataVector): double;
@@ -170,6 +170,7 @@ operator * (const a, b : TDataVector) : TDataVector; inline;
 operator * (const a : Double; const b : TDataVector) : TDataVector; inline;
 operator * (const a : TDataVector; const b : Double) : TDataVector; inline;
 operator / (const a : TDataVector; const b : Double) : TDataVector; inline;
+function ScalarProduct(const a, b: TDataVector): Double; inline;
 
 operator := (const inputDerivate : TInputDerivate) : AnsiString;
 
@@ -235,6 +236,17 @@ begin
   Exit(a*(1/b));
 end;
 
+function ScalarProduct(const a, b: TDataVector): Double;
+var
+  i, c : Integer;
+begin
+  Result := 0;
+  Assert(Length(a) = Length(b));
+  c := Length(a);
+  for i := 0 to c-1 do
+      Result += a[i]*b[i];
+end;
+
 operator:=(const inputDerivate: TInputDerivate): AnsiString;
 begin
   with inputDerivate do
@@ -261,7 +273,7 @@ begin
   end;
 end;
 
-generic function ToDataVector<T>(const Ptr: Pointer; const Len : PtrUInt; const range: T = 1): TDataVector;
+generic function ToDataVector<T>(const Ptr: Pointer; const Len : PtrUInt; const range: T): TDataVector;
 type
   TypePtr = ^T;
 var
@@ -1282,7 +1294,7 @@ begin
     Output := VectorActivateFunction(RawData);
     DifferencesAndDerivates := VectorDerivateOfActivateFunction(RawData) * (ExpectedOutput - Output);
     for j := 0 to fInputCount-1 do
-      Result[j] := CurrentInput[j] + sum(fWeights[j] * DifferencesAndDerivates);
+      Result[j] := CurrentInput[j] + ScalarProduct(fWeights[j], DifferencesAndDerivates);
   finally
     fLocker.Endread;
   end;
@@ -1320,7 +1332,7 @@ begin
     fLocker.Beginread;
     try                             
       for j := 0 to fInputCount - 1 do
-        Result[j] += sum(Error * fWeights[j]);
+        Result[j] := ScalarProduct(Error, fWeights[j]);
     finally
       fLocker.Endread;
     end;
