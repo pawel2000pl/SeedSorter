@@ -1075,7 +1075,7 @@ end;
 { TFeedForwardLayer }
 
 {$IfDef SIGMOID_APPROXIMATION}
-                                                             
+                                                          
 const
  Weights : array of Double =
     (1.0424094510441026528724250965751707553863525390625,
@@ -1308,10 +1308,7 @@ begin
   else
   begin
     Assert(Length(ExpectedOutput) = fNeuronCount);
-    Error := [];
-    SetLength(Error, fNeuronCount);
-    for i := 0 to fNeuronCount - 1 do
-      Error[i] := ExpectedOutput[i] - Output[i];
+    Error := ExpectedOutput - Output;
   end;
                                    
   Assert(Length(Error) = fNeuronCount);
