@@ -158,6 +158,7 @@ object MainForm: TMainForm
     Width = 678
     HorzScrollBar.Page = 107
     VertScrollBar.Page = 106
+    Anchors = [akTop, akLeft, akRight, akBottom]
     ClientHeight = 544
     ClientWidth = 676
     ParentFont = False
