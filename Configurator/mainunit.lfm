@@ -169,6 +169,9 @@ object MainForm: TMainForm
       Top = -1
       Width = 107
       ParentFont = False
+      OnMouseDown = PaintBox1MouseDown
+      OnMouseMove = PaintBox1MouseMove
+      OnMouseUp = PaintBox1MouseUp
       OnPaint = PaintBox1Paint
     end
   end

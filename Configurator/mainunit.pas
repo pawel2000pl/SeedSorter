@@ -42,12 +42,22 @@ type
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormPaint(Sender: TObject);
+    procedure PaintBox1MouseDown(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
+    procedure PaintBox1MouseMove(Sender: TObject; Shift: TShiftState; X,
+      Y: Integer);
+    procedure PaintBox1MouseUp(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
     procedure PaintBox1Paint(Sender: TObject);
     procedure RefreshDeviceListBtnClick(Sender: TObject);
     procedure SaveAsBtnClick(Sender: TObject);
     procedure TakePhotoBtnClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
   private
+    SelectedRect : Integer;
+    RectIsDragging : Boolean;
+    LastX, LastY : Integer;
+
     SamplePhoto: TBitmap;
     Selections: array of TSelectedRect;
     ToBeFreed: TStringList;
@@ -104,6 +114,8 @@ end;
 procedure TMainForm.FormCreate(Sender: TObject);
 begin
   Randomize;
+  RectIsDragging := False;
+  SelectedRect:=-1;
   RefreshDeviceList;
   SamplePhoto := TBitmap.Create;
   ToBeFreed := TStringList.Create;
@@ -160,6 +172,55 @@ var
 begin
   for i := 0 to Length(Selections) - 1 do
     Selections[i].Repaint;
+end;
+
+procedure TMainForm.PaintBox1MouseDown(Sender: TObject; Button: TMouseButton;
+  Shift: TShiftState; X, Y: Integer);
+var
+  i : Integer;
+begin
+  RectIsDragging := True;
+
+  LastX := X;
+  LastY := Y;   
+  SelectedRect:=-1;
+  for i := 0 to Length(Selections) - 1 do
+    if InRange(X, Selections[i].SelectedRectangle.Left, Selections[i].SelectedRectangle.Right)
+    and InRange(Y, Selections[i].SelectedRectangle.Top, Selections[i].SelectedRectangle.Bottom) then
+    begin
+       SelectedRect:=i;
+       break;
+    end;
+end;
+
+procedure TMainForm.PaintBox1MouseMove(Sender: TObject; Shift: TShiftState; X,
+  Y: Integer);
+var
+  offsetX, offsetY : Integer;
+  NewRect : TRect;
+begin
+  if RectIsDragging and InRange(SelectedRect, 0, Length(Selections)-1)  then
+  begin
+     offsetX := X - LastX;
+     offsetY := Y - LastY;
+     NewRect := Rect(
+             Selections[SelectedRect].SelectedRectangle.Left + offsetX, 
+             Selections[SelectedRect].SelectedRectangle.Top + offsetY,
+             Selections[SelectedRect].SelectedRectangle.Right + offsetX,
+             Selections[SelectedRect].SelectedRectangle.Bottom + offsetY
+     );
+     Selections[SelectedRect].SelectedRectangle := NewRect;
+     PaintBox1.Repaint;
+  end;
+  LastX := X;
+  LastY := Y;
+end;
+
+procedure TMainForm.PaintBox1MouseUp(Sender: TObject; Button: TMouseButton;
+  Shift: TShiftState; X, Y: Integer);
+begin
+  RectIsDragging := False;
+  SelectedRect:=-1;
 end;
 
 procedure TMainForm.PaintBox1Paint(Sender: TObject);
