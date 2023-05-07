@@ -96,6 +96,12 @@ begin
       PrepareImage(
       {$endif}
         Vectorizer.Vectorize(@Camera.GetColor) 
+        // // Emergency:
+        // Img2Vector(@Camera.GetColor, 
+        //   Round(FWidth*Rect.Left), 
+        //   Round(FHeight*Rect.Top), 
+        //   Round(FWidth*Rect.Right), 
+        //   Round(FHeight*Rect.Bottom), FInputImageWidth, FInputImageHeight)
       {$ifdef PREPARING_IMAGE}, 
         FInputImageWidth, FInputImageHeight, 
         DefaultDestValueOfPrepareImage, 

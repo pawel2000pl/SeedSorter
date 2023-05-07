@@ -320,7 +320,7 @@ begin
     begin
       if NeedUpdate then
         c := fun(SourceX, SourceY);
-      TrueIndex := (Index shl 1) + Index;
+      TrueIndex := Index * 3;
       Result[TrueIndex] += Weight*c.Red;
       Result[TrueIndex+1] += Weight*c.Green;
       Result[TrueIndex+2] += Weight*c.Blue;
@@ -375,6 +375,7 @@ begin
           w := AreaScale * (rx1-rx2) * (ry1-ry2);
           if w <= Epsilon then
             Continue;
+          Assert(DestinationCounts[ix, iy] < AdditionalSpace);
           DestinationIndexes[ix, iy, DestinationCounts[ix, iy]] := DestIndex;
           DestinationWeights[ix, iy, DestinationCounts[ix, iy]] := w;
           Inc(DestinationCounts[ix, iy]);
@@ -386,7 +387,7 @@ begin
   Data := [];
   Dest := [];
   SetLength(Data, PointCount);
-  SetLength(Dest, PointCount);
+  SetLength(Dest, DestWidth*DestHeight);
   DataLength := PointCount;
   PointCount := 0;
   for y := 0 to SourceHeight-1 do
@@ -399,7 +400,7 @@ begin
         begin
           Index := DestinationIndexes[x, y, i];
           SourceX := x+Left;
-          SourceY := y+Right;
+          SourceY := y+Top;
           Weight := DestinationWeights[x, y, i];
           Dest[Index] += Weight;
         end;
