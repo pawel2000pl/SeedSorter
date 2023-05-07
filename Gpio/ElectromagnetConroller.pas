@@ -37,8 +37,11 @@ procedure TElectromagnetConroller.Execute;
 var
     Time : QWord;
     NewState : Boolean;
+    k : QWord;
 begin
+    k := 0;
     repeat
+        Inc(k);
         Time := GetTickCount64 - FTurnedTime;
         if Time > Delay then
         begin
@@ -52,7 +55,9 @@ begin
                     gpio.Value := FState;
                 end;
             end;
-        end;    //TODO: sprawdzenie konkurencyjności wątków
+        end
+          else if k and $FF = 0 then
+              gpio.Value := FState; //TODO: sprawdzenie konkurencyjności wątków
         sleep(Max(1, Min(DeltaTime div 2, Time-Delay)));
     until FTerminating;    
 end;
