@@ -1,4 +1,4 @@
-unit MirrorImage;
+unit ImageAugmentation;
 
 {$Mode ObjFpc}
 

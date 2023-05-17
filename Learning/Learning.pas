@@ -18,13 +18,14 @@ var
 procedure SaveToIni(net: TFeedForwardNet; FileName : AnsiString);
 var
     ConfigFile : TIniFile;
-    NetPath, ConfusionPath : AnsiString;
+    NetPath, ConfusionPath, NetFileName : AnsiString;
     FS : TFileStream;
 begin
     FileName := StringReplace(FileName, '~/', GetUserDir, []);
     ConfigFile := TIniFile.Create(FileName);
 
-    NetPath := ExtractFilePath(FileName) + 'Net.bin';
+    NetFileName := 'Net' + FormatDateTime('YYYYMMDDhhnnss', now()) + '.bin';
+    NetPath := ExtractFilePath(FileName) + NetFileName;
     ConfusionPath := ExtractFilePath(FileName) + 'confusion.html';
     ConfigFile.WriteString('Global', 'NetPath', NetPath);
     ConfigFile.WriteInteger('Global', 'InputImageWidth', InputImageWidth);
@@ -48,7 +49,7 @@ begin
     Randomize;
     Samples := [];
     LoadSamples;
-    NetDimenstions := [InputImageWidth*InputImageHeight*3, 6, 6, 2];
+    NetDimenstions := [InputImageWidth*InputImageHeight*3, 7, 6, 2];
     
     Writeln('Learning for size: ', InputImageWidth, 'x', InputImageHeight);    
     net := TFeedForwardNet.Create(NetDimenstions);

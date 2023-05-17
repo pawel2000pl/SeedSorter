@@ -179,6 +179,11 @@ implementation
 uses
   Math, crc;
 
+function CubeRoot(x : Double) : Double; inline;
+begin
+  Exit(Sign(x) * Power(abs(x), 1/3));
+end;
+
 operator + (const a, b : TDataVector) : TDataVector;
 var
   i, c : Integer;
@@ -947,7 +952,7 @@ begin
   begin                                                          
     it := 0;
     for i := 0 to Length(ExpectedOutput)-1 do
-        ExpectedOutput[i] := abs(RandG(1, 1));
+        ExpectedOutput[i] := Power(abs(RandG(1, 1)), 1/3);
     ExpectedOutput := NormalizeData(ExpectedOutput);
     repeat
        Inc(it);
@@ -1261,9 +1266,9 @@ begin
       begin
         for j := 0 to fInputCount - 1 do
           if not InRange(fWeights[j, i], -MaxAmplitude, MaxAmplitude) then
-            fWeights[j, i] *= RandG(1, 1);
+            fWeights[j, i] *= CubeRoot(RandG(1, 1));
         if not InRange(fBias[i], -MaxAmplitude, MaxAmplitude) then
-          fBias[i] *= RandG(1, 1);
+          fBias[i] *= CubeRoot(RandG(1, 1));
       end;
   finally
     fLocker.Endwrite;
@@ -1369,8 +1374,8 @@ begin
   for i := 0 to fNeuronCount - 1 do
   begin
     for j := 0 to fInputCount - 1 do
-      fWeights[j, i] += RandG(0, 1);
-    fBias[i] += RandG(0, 1);
+      fWeights[j, i] += CubeRoot(RandG(0, 1));
+    fBias[i] += CubeRoot(RandG(0, 1));
   end;
 end;
 
@@ -1381,8 +1386,8 @@ begin
   for i := 0 to fNeuronCount - 1 do
   begin
     for j := 0 to fInputCount - 1 do
-      fWeights[j, i] += RandG(0, 1);
-    fBias[i] += RandG(mean, stddev);
+      fWeights[j, i] += CubeRoot(RandG(0, 1));
+    fBias[i] += CubeRoot(RandG(mean, stddev));
   end;
 end;
 
@@ -1393,8 +1398,8 @@ begin
   for i := 0 to fNeuronCount - 1 do
   begin
     for j := 0 to fInputCount - 1 do
-      fWeights[j, i] += RandG(0, 1);
-    fBias[i] *= RandG(mean, stddev);
+      fWeights[j, i] += CubeRoot(RandG(0, 1));
+    fBias[i] *= CubeRoot(RandG(mean, stddev));
   end;
 end;
 
