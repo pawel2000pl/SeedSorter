@@ -5,7 +5,7 @@ unit SampleLoader;
 interface
 
 uses 
-    SysUtils, FPImage, UniversalImage, MirrorImage;
+    SysUtils, FPImage, UniversalImage, ImageAugmentation, PostPreOperations;
 
 type
     TSampleImage = record
@@ -26,27 +26,33 @@ implementation
 
 function DeformImage(image : TUniversalImage; mode : Integer) : TUniversalImage;
 var
-    img : TUniversalImage;
+    tmps : array of TUniversalImage;
+    tmpIndex, i : Integer;
 begin
-    case mode of
-        0: Result := image;
-        1: Result := CreateMirrorImage1(image);
-        2: Result := CreateMirrorImage2(image);
-        3: Result := CreateMirrorImage3(image);
-        else
-        begin
-            img := DeformImage(image, mode mod 4);
-            if mode < 16 then
-              Result := AddNoiseToImage(img, 3/256)
-            else
-              Result := AddTrigFilterToImage(img, 
-                RandomTrigFilter(0, 1/16, 1.5, 0.5),
-                RandomTrigFilter(0, 1/16, 1.5, 0.5),
-                RandomTrigFilter(0, 1/16, 1.5, 0.5));
-            if image <> img then
-                img.Free;
-        end;
+    tmps := [];
+    SetLength(tmps, 8);
+    tmpIndex := 0;
+
+    case mode mod 4 of
+        0: tmps[PostInc(tmpIndex)] := image;
+        1: tmps[PostInc(tmpIndex)] := CreateMirrorImage1(image);
+        2: tmps[PostInc(tmpIndex)] := CreateMirrorImage2(image);
+        3: tmps[PostInc(tmpIndex)] := CreateMirrorImage3(image);
     end;
+
+    if (mode >= 4) and (mode mod 16 < 8) or (mode mod 8 >= 4) then
+      tmps[PostInc(tmpIndex)] := AddNoiseToImage(tmps[tmpIndex-1], 3/256);
+
+    if mode mod 16 >= 8 then  
+      tmps[PostInc(tmpIndex)] := AddTrigFilterToImage(tmps[tmpIndex-1], 
+        RandomTrigFilter(0, 1/16, 1.8, 1.5),
+        RandomTrigFilter(0, 1/16, 1.8, 1.5),
+        RandomTrigFilter(0, 1/16, 1.8, 1.5));
+
+    Result := tmps[PreDec(tmpIndex)];
+    for i := low(tmps) to high(tmps) do
+      if (tmps[i] <> nil) and (tmps[i] <> image) and (tmps[i] <> Result) then
+        tmps[i].Free;
 end;
 
 procedure LoadSample(const Verdict : Boolean; const FileName : AnsiString);
@@ -77,6 +83,7 @@ var
     s : AnsiString;
     v : Boolean;
 begin
+    Writeln('Loading samples...');
     c := ParamCount;
     v := False;
     SetLength(Samples, 0);

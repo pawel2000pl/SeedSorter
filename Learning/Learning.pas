@@ -13,14 +13,15 @@ var
 procedure SaveToIni(net: TFeedForwardNet; FileName : AnsiString = '~/.seedsorter/config.ini');
 var
     ConfigFile : TIniFile;
-    NetPath, ConfusionPath : AnsiString;
+    NetPath, ConfusionPath, NetFileName : AnsiString;
     FS : TFileStream;
     ts : TStringList;
 begin
     FileName := StringReplace(FileName, '~/', GetUserDir, []);
     ConfigFile := TIniFile.Create(FileName);
 
-    NetPath := ExtractFilePath(FileName) + 'Net.bin';
+    NetFileName := 'Net' + FormatDateTime('YYYYMMDDhhnnss', now()) + '.bin';
+    NetPath := ExtractFilePath(FileName) + NetFileName;
     ConfusionPath := ExtractFilePath(FileName) + 'confusion.html';
     ConfigFile.WriteString('Global', 'NetPath', NetPath);
     ConfigFile.WriteInteger('Global', 'InputImageWidth', InputImageWidth);
@@ -57,11 +58,11 @@ var
     learningThreads : array of TThreadID;
     BestValue, CurrentValue : Double;
     NetDimenstions : array of Integer;
-begin    
+begin   
     Randomize;
     Samples := [];
     LoadSamples;
-    NetDimenstions := [InputImageWidth*InputImageHeight*3, 6, 6, 2];
+    NetDimenstions := [InputImageWidth*InputImageHeight*3, 7, 6, 2];
     LearningThreadCount := 4;
     nets := [];
     learningThreads := [];
