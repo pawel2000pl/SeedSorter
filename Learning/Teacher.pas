@@ -1,6 +1,6 @@
 unit Teacher;
 
-{$Mode Fpc}
+{$Mode ObjFpc}
 
 interface
 
@@ -19,16 +19,16 @@ var
 
 procedure TeachNet(net : TFeedForwardNet; const VectorSamples, VectorOutputs : array of TDataVector; const Quickness, TestFraction : Double);
 const
-    MaxEpoch = 16384;
-    MaxIdleEpoch = 64;
+    MaxEpoch = 256;
+    MaxIdleEpoch = 32;
 var
     bestNet : TMemoryStream;
     LearningInput, LearningOutput, TestInput, TestOutput : array of TDataVector;
-    Count, LearnCount, TestCount : Int32;
+    Count, LearnCount, TestCount : Integer;
     DivisionVector : array of Boolean;
-    i, j, k : Int32;
-    epoch : Int32;
-    lastBetterEpoch : Int32;
+    i, j, k : Integer;
+    epoch : Integer;
+    lastBetterEpoch : Integer;
 
     LearningGrade, TestGrade : Double;
     LearningBestGrade, TestBestGrade : Double;
