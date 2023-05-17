@@ -310,7 +310,7 @@ end;
 
 function TImageVectorizer.Vectorize(const fun : TColorFunction) : TDoubleArray;
 var
-  i : Integer;
+  i, TrueIndex : Integer;
   c : TFPColor;
 begin
   Result := [];
@@ -320,9 +320,10 @@ begin
     begin
       if NeedUpdate then
         c := fun(SourceX, SourceY);
-      Result[Index] += Weight*c.Red;
-      Result[Index+1] += Weight*c.Green;
-      Result[Index+2] += Weight*c.Blue;
+      TrueIndex := Index * 3;
+      Result[TrueIndex] += Weight*c.Red;
+      Result[TrueIndex+1] += Weight*c.Green;
+      Result[TrueIndex+2] += Weight*c.Blue;
     end;
 end;
 
@@ -364,16 +365,17 @@ begin
       sxb := sxa+WidthScale;
       DestIndex := y * DestWidth + x;
 
-      for iy := Floor(sya) to Floor(syb) do
-        for ix := Floor(sxa) to Floor(sxb) do
+      for iy := Floor(sya) to min(Ceil(syb), SourceHeight)-1 do
+        for ix := Floor(sxa) to min(Ceil(sxb), SourceWidth)-1 do
         begin
-          rx1 := min(sxb, ix+1)-ix;
-          ry1 := min(syb, iy+1)-iy;
-          rx2 := max(sxa, ix)-ix;
-          ry2 := max(sya, iy)-iy;
+          rx1 := min(sxb, ix+1);
+          ry1 := min(syb, iy+1);
+          rx2 := max(sxa, ix);
+          ry2 := max(sya, iy);
           w := AreaScale * (rx1-rx2) * (ry1-ry2);
           if w <= Epsilon then
             Continue;
+          Assert(DestinationCounts[ix, iy] < AdditionalSpace);
           DestinationIndexes[ix, iy, DestinationCounts[ix, iy]] := DestIndex;
           DestinationWeights[ix, iy, DestinationCounts[ix, iy]] := w;
           Inc(DestinationCounts[ix, iy]);
@@ -385,7 +387,7 @@ begin
   Data := [];
   Dest := [];
   SetLength(Data, PointCount);
-  SetLength(Dest, PointCount);
+  SetLength(Dest, DestWidth*DestHeight);
   DataLength := PointCount;
   PointCount := 0;
   for y := 0 to SourceHeight-1 do
@@ -393,19 +395,21 @@ begin
     begin
       Data[PointCount].NeedUpdate := True;
       for i := 0 to DestinationCounts[x, y]-1 do
+      begin
         with Data[PointCount] do
         begin
-          Index := 3*DestinationIndexes[x, y, i];
+          Index := DestinationIndexes[x, y, i];
           SourceX := x+Left;
-          SourceY := y+Right;
-          Weight := DestinationWeights[x, y, i]*(1/High(Word));
-          Dest[DestinationIndexes[x, y, i]] += DestinationWeights[x, y, i];
-          Inc(PointCount);
+          SourceY := y+Top;
+          Weight := DestinationWeights[x, y, i];
+          Dest[Index] += Weight;
         end;
+        Inc(PointCount);
+      end;
     end; 
 
-  for i := 0 to DestWidth*DestHeight-1 do
-    Data[i].Weight /= Dest[i];
+  for i := 0 to PointCount-1 do
+    Data[i].Weight /= Dest[Data[i].Index] * High(Word);
 end;
 
 end.

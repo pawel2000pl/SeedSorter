@@ -75,7 +75,7 @@ begin
     Randomize;
     Samples := [];
     LoadSamples;
-    NetDimenstions := [InputImageWidth*InputImageHeight*3, 16, 9, 2];
+    NetDimenstions := [InputImageWidth*InputImageHeight*3, 6, 6, 2];
     LearningThreadCount := GetCoreCount();
     nets := [];
     learningThreads := [];

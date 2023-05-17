@@ -24,11 +24,11 @@ const
 var
     bestNet : TMemoryStream;
     LearningInput, LearningOutput, TestInput, TestOutput : array of TDataVector;
-    Count, LearnCount, TestCount : Integer;
+    Count, LearnCount, TestCount : Int32;
     DivisionVector : array of Boolean;
-    i, j, k : Integer;
-    epoch : Integer;
-    lastBetterEpoch : Integer;
+    i, j, k : Int32;
+    epoch : Int32;
+    lastBetterEpoch : Int32;
 
     LearningGrade, TestGrade : Double;
     LearningBestGrade, TestBestGrade : Double;

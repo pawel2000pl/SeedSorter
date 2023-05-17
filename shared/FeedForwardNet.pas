@@ -144,8 +144,8 @@ type
   end;
 
   {$If FPC_FULLVERSION >= 30200}
-  generic function ToDataVector<T>(const tab: array of T; const range: T = 1): TDataVector; overload;
-  generic function ToDataVector<T>(const Ptr: Pointer; const Len : PtrUInt; const range: T = 1): TDataVector; overload;
+  generic function ToDataVector<T>(const tab: array of T; const range: T): TDataVector; overload;
+  generic function ToDataVector<T>(const Ptr: Pointer; const Len : PtrUInt; const range: T): TDataVector; overload;
   {$EndIf}
 
 function SumOfSquaresOfDifferences(const a, b: TDataVector): double;
@@ -170,6 +170,7 @@ operator * (const a, b : TDataVector) : TDataVector; inline;
 operator * (const a : Double; const b : TDataVector) : TDataVector; inline;
 operator * (const a : TDataVector; const b : Double) : TDataVector; inline;
 operator / (const a : TDataVector; const b : Double) : TDataVector; inline;
+function ScalarProduct(const a, b: TDataVector): Double; inline;
 
 operator := (const inputDerivate : TInputDerivate) : AnsiString;
 
@@ -235,6 +236,17 @@ begin
   Exit(a*(1/b));
 end;
 
+function ScalarProduct(const a, b: TDataVector): Double;
+var
+  i, c : Integer;
+begin
+  Result := 0;
+  Assert(Length(a) = Length(b));
+  c := Length(a);
+  for i := 0 to c-1 do
+      Result += a[i]*b[i];
+end;
+
 operator:=(const inputDerivate: TInputDerivate): AnsiString;
 begin
   with inputDerivate do
@@ -261,7 +273,7 @@ begin
   end;
 end;
 
-generic function ToDataVector<T>(const Ptr: Pointer; const Len : PtrUInt; const range: T = 1): TDataVector;
+generic function ToDataVector<T>(const Ptr: Pointer; const Len : PtrUInt; const range: T): TDataVector;
 type
   TypePtr = ^T;
 var
@@ -1075,7 +1087,7 @@ end;
 { TFeedForwardLayer }
 
 {$IfDef SIGMOID_APPROXIMATION}
-                                                             
+                                                          
 const
  Weights : array of Double =
     (1.0424094510441026528724250965751707553863525390625,
@@ -1090,29 +1102,29 @@ var
 begin
   dx := x + x*x*x;
   adx := abs(dx);
-  Result := (Weights[0]  / (adx+1)
+  Result := (Weights[0]  / (adx+2)
             + Weights[1] / (adx+4)
-            + Weights[2] / (adx+16)
-            + Weights[3] / (adx+64)) * dx
+            + Weights[2] / (adx+8)
+            + Weights[3] / (adx+16)) * dx
             + Weights[4];
 end;     
 
 class function TFeedForwardLayer.DerivateOfActivateFunction(x: double): double; inline;
 var
-  k, ak, dk, m1, m4, m16, m64 : Double;
+  k, ak, dk, m1, m2, m3, m4 : Double;
 begin
   dk := 1+3*x*x;
   k := x+x*x*x;
   ak := abs(k);
-  m1 := 1+ak;
-  m4 := 4+ak;
-  m16 := 16+ak;
-  m64 := 64+ak;
+  m1 := 2+ak;
+  m2 := 4+ak;
+  m3 := 8+ak;
+  m4 := 16+ak;
   Result :=
-   + Weights[0]*1*dk/(m1*m1)
-   + Weights[1]*4*dk/(m4*m4)
-   + Weights[2]*16*dk/(m16*m16)
-   + Weights[3]*64*dk/(m64*m64);
+   + Weights[0]*2*dk/(m1*m1)
+   + Weights[1]*4*dk/(m2*m2)
+   + Weights[2]*8*dk/(m3*m3)
+   + Weights[3]*16*dk/(m4*m4);
 end;
 
 {$else}
@@ -1282,7 +1294,7 @@ begin
     Output := VectorActivateFunction(RawData);
     DifferencesAndDerivates := VectorDerivateOfActivateFunction(RawData) * (ExpectedOutput - Output);
     for j := 0 to fInputCount-1 do
-      Result[j] := CurrentInput[j] + sum(fWeights[j] * DifferencesAndDerivates);
+      Result[j] := CurrentInput[j] + ScalarProduct(fWeights[j], DifferencesAndDerivates);
   finally
     fLocker.Endread;
   end;
@@ -1308,10 +1320,7 @@ begin
   else
   begin
     Assert(Length(ExpectedOutput) = fNeuronCount);
-    Error := [];
-    SetLength(Error, fNeuronCount);
-    for i := 0 to fNeuronCount - 1 do
-      Error[i] := ExpectedOutput[i] - Output[i];
+    Error := ExpectedOutput - Output;
   end;
                                    
   Assert(Length(Error) = fNeuronCount);
@@ -1323,7 +1332,7 @@ begin
     fLocker.Beginread;
     try                             
       for j := 0 to fInputCount - 1 do
-        Result[j] += sum(Error * fWeights[j]);
+        Result[j] := ScalarProduct(Error, fWeights[j]);
     finally
       fLocker.Endread;
     end;

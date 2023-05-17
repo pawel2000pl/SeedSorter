@@ -14,10 +14,10 @@ type
         DeltaTime = 1000 div Freq;
     private
         gpio : TGpioPinController;
-        FValue : Boolean;
         FTurnedTime : QWord;
-        FTerminating : Boolean;
         FDelay : Word;
+        FValue : Boolean;
+        FTerminating : Boolean;
         FState : Boolean;
         
         procedure SetValue(const AValue : Boolean);
@@ -37,8 +37,11 @@ procedure TElectromagnetConroller.Execute;
 var
     Time : QWord;
     NewState : Boolean;
+    k : QWord;
 begin
+    k := 0;
     repeat
+        Inc(k);
         Time := GetTickCount64 - FTurnedTime;
         if Time > Delay then
         begin
@@ -51,8 +54,10 @@ begin
                     FState := NewState;
                     gpio.Value := FState;
                 end;
-            end; 
-        end;    
+            end;
+        end
+          else if k and $FF = 0 then
+              gpio.Value := FState; //TODO: sprawdzenie konkurencyjności wątków
         sleep(Max(1, Min(DeltaTime div 2, Time-Delay)));
     until FTerminating;    
 end;
