@@ -48,7 +48,7 @@ begin
     Randomize;
     Samples := [];
     LoadSamples;
-    NetDimenstions := [InputImageWidth*InputImageHeight*3, 9, 9, 2];
+    NetDimenstions := [InputImageWidth*InputImageHeight*3, 6, 6, 2];
     
     Writeln('Learning for size: ', InputImageWidth, 'x', InputImageHeight);    
     net := TFeedForwardNet.Create(NetDimenstions);

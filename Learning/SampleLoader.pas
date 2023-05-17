@@ -36,7 +36,13 @@ begin
         else
         begin
             img := DeformImage(image, mode mod 4);
-            Result := AddNoiseToImage(img, 3/256);
+            if mode < 16 then
+              Result := AddNoiseToImage(img, 3/256)
+            else
+              Result := AddTrigFilterToImage(img, 
+                RandomTrigFilter(0, 1/16, 1.5, 0.5),
+                RandomTrigFilter(0, 1/16, 1.5, 0.5),
+                RandomTrigFilter(0, 1/16, 1.5, 0.5));
             if image <> img then
                 img.Free;
         end;
@@ -45,7 +51,7 @@ end;
 
 procedure LoadSample(const Verdict : Boolean; const FileName : AnsiString);
 const
-    ReplicationCount = 16;
+    ReplicationCount = 64;
 var
     image : TUniversalImage;
     i, c : Integer;

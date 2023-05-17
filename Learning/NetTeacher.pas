@@ -75,7 +75,7 @@ const
   EpochsPerThread = 64;
   ThreadCount = 8;
   MaxEpochs = 1024;
-  MaxNotBetterCount = 16;
+  MaxNotBetterCount = 2;
   MinTemperature = 1e-30;
   MinDeltaGrade = 1e-4;
 var
@@ -160,7 +160,7 @@ begin
     FQuickness := Quicknesses[BestNetwork];
     writeln(Epoch, #9, NotBetterCount, #9, BestGrade:2:6, #9, Temperature:2:8, #9, FQuickness:2:8, #9, 'Best: ', BestNetwork);
 
-    if NotBetterCount > MaxNotBetterCount then
+    if NotBetterCount >= MaxNotBetterCount then
       Break;
   end;
 
